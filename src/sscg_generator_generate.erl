@@ -34,7 +34,8 @@ cli() ->
                         name => sbom,
                         long => "-sbom",
                         short => $s,
-                        help => {"[-s <SBOM_file>]", fun() -> "SBOM JSON file path" end},
+                        help => {"[-s <SBOM_file>]", 
+                                 fun() -> "SBOM JSON file path" end},
                         type => binary,
                         required => true
                     },
@@ -42,7 +43,8 @@ cli() ->
                         name => output,
                         long => "-output",
                         short => $o,
-                        help => {"[-p <output_path>]", fun() -> "Output file path and name" end},
+                        help => {"[-p <output_path>]", 
+                                 fun() -> "Output file path and name" end},
                         type => binary,
                         default => <<"./priv/output/sscg_output.json">>,
                         required => false
@@ -60,9 +62,13 @@ generate(#{sbom := SBOM_File} = Args) ->
         case read_json_file(SBOM_File) of
             {ok, Data} -> Data;
             {error, {file_not_available, Reason}} ->
-                sscg_generator_cli:abort("Error: Cannot read file ~s. Reason: ~p~n", [SBOM_File, Reason]);
+                sscg_generator_cli:abort(
+                    "Error: Cannot read file ~s. Reason: ~p~n", 
+                    [SBOM_File, Reason]);
             {error, invalid_json} ->
-                sscg_generator_cli:abort("Error: Invalid JSON format in ~s~n", [SBOM_File])
+                sscg_generator_cli:abort(
+                    "Error: Invalid JSON format in ~s~n", 
+                    [SBOM_File])
         end,
 
     case is_a_valid_sbom(JsonData) of
@@ -72,30 +78,25 @@ generate(#{sbom := SBOM_File} = Args) ->
     end,
 
     SpecVersion = maps:get(<<"specVersion">>, JsonData),
-
-    _Schema = 
-        case get_schema(SpecVersion) of 
-            {ok, SchemaData} -> 
-                SchemaData;
-            {error, FetchReason} -> 
-                sscg_generator_cli:abort("Impossible to retrieve the schema from https://cyclonedx.org. Reason: ~p~n", [FetchReason])
-        end,
-    
     SSCGData = generate_sscg(SpecVersion),
 
-    EncodeOptions = [{indent, 4}, {float_format, [{scientific, 2}]}, skip_undefined],
+    EncodeOptions = [{indent, 4}, 
+                     {float_format, [{scientific, 2}]},
+                     skip_undefined],
     Json = jsone:encode(SSCGData, EncodeOptions),
 
     OutputPath = maps:get(output, Args),
     case file:write_file(OutputPath, Json) of
         ok -> 
             sscg_generator_cli:print(
-                color:green(io_lib:format("JSON successfully stored to ~s~n", [OutputPath]))
-            );
+                color:green(
+                    io_lib:format(
+                        "JSON successfully stored to ~s~n", [OutputPath])));
         {error, FailedReason} -> 
             sscg_generator_cli:abort(
-                color:red(io_lib:format("Failed to store JSON. Reason: ~p~n", [FailedReason]))
-            )
+                color:red(
+                    io_lib:format(
+                        "Failed to store JSON. Reason: ~p~n", [FailedReason])))
     end,
 
     ok.
@@ -107,7 +108,10 @@ generate_sscg(SpecVersion) ->
     SerialNumber = sscg_generator_utils:serial_number(),
     Email = sscg_generator_utils:prompt_for(<<"author's email">>, 
                                             fun validate_email/1, 
-                                            <<"Invalid email format. Please use the format: letters@domain.extension (e.g., name@example.com)">>),
+                                            <<"Invalid email format.",
+                                              "Please use the format: ",
+                                              "letters@domain.extension",
+                                              "(e.g., name@example.com)">>),
     Name  = sscg_generator_utils:prompt_for(<<"author's name">>),
 
     #{
@@ -144,21 +148,30 @@ read_json_file(JsonPath) ->
             {error, {file_not_available, Reason}}
     end.
 
-
 % @doc 
-% Validates whether the given JSON data represents a valid SBOM (Software Bill of Materials).
-% A valid SBOM must include:
-% - `"bomFormat"`: Specifies the format of the SBOM, which should be `"CycloneDX"`.
-% - `"specVersion"`: The specification version of the SBOM.
-% - `"$schema"`: The URL of the schema, which is validated against the expected schema URL.
+% Validates whether the given JSON data represents a valid SBOM (Software Bill 
+% of Materials). A valid SBOM must meet the following criteria:
+% - It must contain the `"specVersion"` field, which specifies the version of the SBOM.
+% - It must include all required fields as defined by the schema for the specified version,
+%   as outlined in the schema documentation at https://cyclonedx.org.
 -spec is_a_valid_sbom(json()) -> boolean().
 is_a_valid_sbom(JsonData) ->
-    case {maps:find(<<"bomFormat">>, JsonData),
-            maps:find(<<"specVersion">>, JsonData),
-            maps:find(<<"$schema">>, JsonData)} of
-        {{ok, BomFormat}, {ok, SpecVersion}, {ok, SchemaURL}} ->
-            URL =  <<?CYCLONEDX_BASE_URL, "bom-", SpecVersion/binary, ".schema.json">>,
-            (URL =:= SchemaURL) andalso (BomFormat =:= <<"CycloneDX">>);
+    case maps:find(<<"specVersion">>, JsonData) of
+        {ok, SpecVersion} ->
+            Schema = 
+                case get_schema(SpecVersion) of 
+                    {ok, SchemaData} -> 
+                        SchemaData;
+                    {error, FetchReason} -> 
+                        sscg_generator_cli:abort(
+                            "Impossible to retrieve the schema from https://cyclonedx.org."
+                            " Reason: ~p~n", [FetchReason])
+                end,
+            SchemaJson = jsone:decode(Schema),
+            RequiredFields = maps:get(<<"required">>, SchemaJson, []),
+            lists:all(
+                fun(Field) -> maps:is_key(Field, JsonData) end, 
+                RequiredFields);
         _ ->
             false
     end.
@@ -168,7 +181,7 @@ is_a_valid_sbom(JsonData) ->
       when SpecVersion :: spec_version(),
            Result :: {ok, binary()} | {error, term()}.
 get_schema(SpecVersion) ->
-    URL =  <<?CYCLONEDX_BASE_URL, "bom-", SpecVersion/binary, ".schema.json">>,
+    URL  =  <<?CYCLONEDX_BASE_URL, "bom-", SpecVersion/binary, ".schema.json">>,
     sscg_generator_http:get_json(URL).
 
 % @doc Function to validate an email address

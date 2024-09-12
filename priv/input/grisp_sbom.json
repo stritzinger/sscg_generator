@@ -1,0 +1,50 @@
+{
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "serialNumber": "06e3d503-ffa5-4d16-a0ba-b6cdb69868b9",
+    "version": 1,
+    "metadata": {
+      "timestamp": "2024-09-12T15:12:03Z",
+      "tools": [
+        {
+          "name": "rebar3_sbom",
+          "hashes": [],
+          "externalReferences": []
+        }
+      ],
+      "lifecycles": []
+    },
+    "components": [
+      {
+        "type": "library",
+        "bom-ref": "ref_component_mapz",
+        "name": "mapz",
+        "version": "2.4.0",
+        "description": "Extensions to the Erlang maps module",
+        "hashes": [
+          {
+            "alg": "SHA-256",
+            "content": "4b68df5cf0522e0d6545df7b681bc052865cdb78405ad4cc9c55fe45ee7b25be"
+          }
+        ],
+        "licenses": [
+          {
+            "license": {
+              "id": "MIT",
+              "properties": []
+            }
+          }
+        ],
+        "purl": "pkg:hex/mapz@2.4.0"
+      }
+    ],
+    "dependencies": [
+      {
+        "ref": "ref_component_mapz"
+      }
+    ],
+    "vulnerabilities": [],
+    "annotations": [],
+    "properties": [],
+    "formulation": []
+}

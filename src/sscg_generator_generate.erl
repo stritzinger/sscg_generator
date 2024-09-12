@@ -25,6 +25,9 @@
 % @doc Defines the CLI structure for the 'generate' command.
 -spec cli() -> map().
 cli() ->
+    DefaultName  = undefined,
+    DefaultEmail = undefined,
+    ParseAuthors = fun(A) -> sscg_generator_cli:parse_authors(A, {DefaultName, DefaultEmail}) end,
     #{
         commands => #{
             "generate" => #{
@@ -48,6 +51,16 @@ cli() ->
                         type => binary,
                         default => <<"./priv/output/sscg_output.json">>,
                         required => false
+                    },
+                    #{
+                        name => authors,
+                        long => "-authors",
+                        short => $a,
+                        help => {"[-a <name1>:<email1>,<name2>:<email2>,...]", 
+                                 fun() -> "Specify authors' names and emails in the format: name:email" end},
+                        type => {custom, ParseAuthors},
+                        default => "",
+                        required => false
                     }
                 ]
             }
@@ -55,8 +68,8 @@ cli() ->
     }.
 
 % @doc The main task to generate a JSON SSCG from a SBOM file and metadata.
--spec generate(Args :: #{sbom := file_path()}) -> ok | no_return().
-generate(#{sbom := SBOM_File} = Args) ->
+-spec generate(Args :: #{sbom := file_path(), authors := list()}) -> ok | no_return().
+generate(#{sbom := SBOM_File, authors := Authors} = Args) ->
 
     JsonData =
         case sscg_generator_utils:read_json(SBOM_File) of
@@ -78,7 +91,7 @@ generate(#{sbom := SBOM_File} = Args) ->
     end,
 
     SpecVersion = maps:get(<<"specVersion">>, JsonData),
-    SSCGData = generate_sscg(SpecVersion),
+    SSCGData = generate_sscg(#{spec_version => SpecVersion, authors => Authors}),
 
     OutputPath = maps:get(output, Args),
     case sscg_generator_utils:write_json(OutputPath, SSCGData) of
@@ -89,29 +102,21 @@ generate(#{sbom := SBOM_File} = Args) ->
                         "JSON successfully stored to ~s~n", [Path])));
         {error, {encoding_failed, EncodingReason}} -> 
             sscg_generator_cli:abort(
-                color:red(
                     io_lib:format(
-                        "Failed to encode JSON. Reason: ~p~n", [EncodingReason])));
+                        "Failed to encode JSON. Reason: ~p~n", [EncodingReason]));
         {error, {write_failed, WriteReason}} -> 
             sscg_generator_cli:abort(
-                color:red(
                     io_lib:format(
-                        "Failed to store JSON. Reason: ~p~n", [WriteReason])))
+                        "Failed to store JSON. Reason: ~p~n", [WriteReason]))
     end,
     ok.
 
 %--- Internal Functions --------------------------------------------------------
 
-generate_sscg(SpecVersion) ->
+generate_sscg(#{spec_version := SpecVersion, authors := Authors}) ->
     Timestamp = sscg_generator_utils:current_timestamp(),
     SerialNumber = sscg_generator_utils:serial_number(),
-    Email = sscg_generator_utils:prompt_for(<<"author's email">>, 
-                                            fun validate_email/1, 
-                                            <<"Invalid email format.",
-                                              "Please use the format: ",
-                                              "letters@domain.extension",
-                                              "(e.g., name@example.com)">>),
-    Name  = sscg_generator_utils:prompt_for(<<"author's name">>),
+
 
     #{
         bomFormat => <<"CycloneDX">>,
@@ -119,12 +124,7 @@ generate_sscg(SpecVersion) ->
         serialNumber => SerialNumber,
         metadata => #{
             timestamp => Timestamp,
-            authors => [
-                #{
-                    name => Name,
-                    email => Email
-                }
-            ]
+            authors => Authors
         }
     }.
 

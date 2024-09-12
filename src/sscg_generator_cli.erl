@@ -9,6 +9,7 @@
 -export([input/1]).
 -export([confirm/1]).
 -export([parse_range/2]).
+-export([parse_authors/2]).
 
 % Callbacks
 -export([format/2]).
@@ -74,6 +75,29 @@ parse_range(Range, {DefaultFrom, DefaultTo}) ->
         Else -> Else
     end.
 
+-spec parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) -> Result
+    when AuthorsStr   :: binary(),
+         DefaultEmail :: binary(),
+         DefaultName  :: binary(),
+         Result       :: [#{name => binary(), email => binary()}] | error.
+parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) ->
+    AuthorEntries = string:split(AuthorsStr, ",", all),
+
+    lists:map(fun(AuthorEntry) ->
+                    case string:split(AuthorEntry, ":", all) of
+                        [Name, Email] when Name =/= [] andalso Email =/= [] ->
+                            #{name  => list_to_binary(string:strip(Name)),
+                              email => list_to_binary(string:strip(Email))};
+                        [Name, []] -> 
+                            #{name  => list_to_binary(string:strip(Name)),
+                              email => DefaultEmail};
+                        [[], Email] -> 
+                            #{name  => DefaultName,
+                              email => list_to_binary(string:strip(Email))};
+                        _ -> 
+                            abort("Failed parsing authors. Reason: ~s. ~n",[invalid_format])
+                    end
+                end, AuthorEntries).
 %--- Callbacks -----------------------------------------------------------------
 
 format(Event, _Config) ->

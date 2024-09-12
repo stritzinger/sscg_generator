@@ -1,14 +1,9 @@
 {
     "metadata":{
-        "timestamp":"2024-09-12T16:59:22Z",
-        "authors":[
-            {
-                "name":"sasa",
-                "email":"sa@as.es"
-            }
-        ]
+        "timestamp":"2024-09-12T17:35:12Z",
+        "authors":[]
     },
     "bomFormat":"CycloneDX",
-    "serialNumber":"urn:uuid-3d5a530c-e465-42c7-9d36-6080b2fc78b7",
+    "serialNumber":"urn:uuid-0981a583-ad15-4e52-969c-584eec1585f3",
     "specVersion":"1.5"
 }

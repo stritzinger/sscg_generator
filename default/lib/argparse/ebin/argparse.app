@@ -1,0 +1,8 @@
+{application,argparse,
+             [{registered,[]},
+              {description,"argparse: arguments parser, and cli framework"},
+              {vsn,"2.0.0"},
+              {applications,[kernel,stdlib]},
+              {licenses,["BSD 3-clause clear"]},
+              {links,[{"GitHub","https://github.com/max-au/argparse"}]},
+              {modules,[args,cli]}]}.

@@ -1,0 +1,153 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:b4f2954f-a96d-4578-9509-1ae2d6476209",
+  "metadata": {
+    "timestamp": "2024-08-13T01:28:52.765Z",
+    "authors": [
+      {
+        "name": "Some Company that wants to generate a SSCG for their library",
+        "email": "some@company.com"
+      }
+    ],
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "ReSCALE SSCG Generator",
+          "version": "1.4.17",
+          "description": "A ReSCALE certified tool to generate SSCGs",
+          "purl": "pkg:hex/sscg-generator@1.4.17",
+          "data": [
+            {
+              "name": "CLI configuration flags",
+              "type": "configuration",
+              "contents": {
+                "attachments": {
+                  "content": "--test-report=report.json --output=sscg.json"
+                }
+              }
+            }
+          ],
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
+            }
+          ]
+        },
+        {
+          "type": "container",
+          "name": "ReSCALE Static Code Analysis Module",
+          "version": "2.1.7",
+          "description": "A ReSCALE certified container to execute static testing",
+          "purl": "pkg:docker/static-code-analysis-module@2.1.7",
+          "data": [
+            {
+              "name": "Docker Environment",
+              "type": "configuration",
+              "contents": {
+                "attachments": {
+                  "content": "RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false"
+                }
+              }
+            }
+          ],
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "35d1c8f259129dc800ec8e073bb68f995424619c"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "standards": [
+      {
+        "bom-ref": "https://rescale-project.eu/standard/1.0.0",
+        "name": "The ReSCALE Standard",
+        "description": "The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)",
+        "version": "1.0.0",
+        "requirements": [
+          {
+            "bom-ref": "https://rescale-project.eu/standard/1.0.0/conformance/complete",
+            "identifier": "rescale/1.0.0/conformance/complete",
+            "title": "Full conformance with ReSCALEs 'complete' profile, e.g. complete absence of findings"
+          }
+        ]
+      }
+    ]
+  },
+  "declarations": {
+    "targets": {
+      "components": [
+        {
+          "type": "library",
+          "name": "A Very Nice Library which was tested by the ReSCALE Static Code Analysis Module",
+          "bom-ref": "pkg:hex/a-very-nice-library@1.0.0",
+          "version": "1.0.0",
+          "description": "Such a good piece of software, but it has security issues ...",
+          "purl": "pkg:hex/a-very-nice-library@1.0.0",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "53ab2f0f92e87ea4874c8c6997335c211d81e636"
+            }
+          ]
+        }
+      ]
+    },
+    "assessors": [
+      {
+        "bom-ref": "Producer Reference",
+        "third-party": "false",
+        "organization": {
+          "bom-ref": "Producer Entity",
+          "name": "Some Company that wants to generate a SSCG for their library",
+          "contact": "some@company.com"
+        }
+      }
+    ],
+    "attestations": [
+      {
+        "assessor": "Producer Reference",
+        "summary": "Mapping of Requirements to Claims",
+        "map": [
+          {
+            "requirement": "https://rescale-project.eu/standard/1.0.0/conformance/complete",
+            "counterClaims": [
+              "Claim: ReSCALE Test Suite XY found something!"
+            ]
+          }
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "bom-ref": "Claim: ReSCALE Test Suite XY found something!",
+        "target": "pkg:hex/a-very-nice-library@1.0.0",
+        "evidence": [
+          "Evidence: memory error"
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "bom-ref": "Evidence: memory error",
+        "description": "Exploitable memory error found",
+        "data": [
+          {
+            "name": "ReSCALE Test Suite XY Output",
+            "contents": {
+              "attachment": {
+                "content": "Test Suite XY found: \n\tmemory corruption in file main.c at line 23"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

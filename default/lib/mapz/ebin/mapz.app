@@ -1,0 +1,8 @@
+{application,mapz,
+             [{registered,[]},
+              {description,"Extensions to the Erlang maps module"},
+              {vsn,"2.4.0"},
+              {applications,[kernel,stdlib]},
+              {licenses,["MIT"]},
+              {links,[{"GitHub","https://github.com/eproxus/mapz"}]},
+              {modules,[mapz]}]}.

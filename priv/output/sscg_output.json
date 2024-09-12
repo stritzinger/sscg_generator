@@ -1,0 +1,14 @@
+{
+    "metadata":{
+        "timestamp":"2024-09-12T13:33:20Z",
+        "authors":[
+            {
+                "name":"asasa",
+                "email":"dsdsWds@ds.es"
+            }
+        ]
+    },
+    "bomFormat":"CycloneDX",
+    "serialNumber":"urn:uuid-527e65ad-70a7-4d26-a131-e794db0d2607",
+    "specVersion":"1.6"
+}

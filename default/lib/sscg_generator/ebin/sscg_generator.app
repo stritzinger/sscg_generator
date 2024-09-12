@@ -1,0 +1,10 @@
+{application,sscg_generator,
+             [{registered,[]},
+              {vsn,"0.1.0"},
+              {description,"SSCG Generator for RESCALE"},
+              {applications,[kernel,stdlib,jsone,color,erlware_commons,mapz,
+                             argparse,uuid,hackney]},
+              {modules,[sscg_generator,sscg_generator_cli,
+                        sscg_generator_generate,sscg_generator_http,
+                        sscg_generator_utils]},
+              {mod,{sscg_generator,[]}}]}.

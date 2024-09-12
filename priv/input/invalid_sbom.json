@@ -1,0 +1,3 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json", // The comma is invalid 
+}

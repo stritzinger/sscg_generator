@@ -22,7 +22,9 @@ main(Args) ->
     try
         cli:run(Args, #{
             progname => ?MODULE,
-            modules => [?MODULE, sscg_generator_generate],
+            modules => [?MODULE, 
+                        sscg_generator_generate,
+                        sscg_generator_publish],
             warn => false
         })
     catch

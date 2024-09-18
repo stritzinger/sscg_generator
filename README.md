@@ -23,14 +23,16 @@ flowchart LR
     E -->|Input| F{Send to another web service}
 ```
 
-In the context of **RESCALE**, Stritzinger is overseeing the development of the **Static Code Analysis Module**. This module runs various tests on source code
-and generates test reports.
+In the context of **RESCALE**, Stritzinger is overseeing the development of component known as the **Static Code Analysis Module**. This module analyzes the source code and produces two output files:
 
-The outputs, which include the `test reports` (`.txt` format) and the `SBOM` (`.json` format), are then used as inputs to generate a `CycloneDX document` containing metadata and other relevant information. This document is known as the `SSCG` (Static Software Supply Chain Guarantee).
+1. **Test Report**: A file containing the results of various static tests performed on the source code (in `.txt` format).
+2. **SBOM (Software Bill of Materials)**: A structured document (in CycloneDX `.json` format) that lists all project dependencies.
 
-Once the SSCG is generated, it is sent, along with the SBOM, to another web service for further processing, where the SSCG is submitted to an HTTP endpoint.
+These two outputs, the **test report** and the **SBOM**, serve as inputs to generate a document called the **SSCG** (Static Software Supply Chain Guarantee). The SSCG is a CycloneDX document that combines the metadata from the SBOM with additional information about the testing process, ensuring the integrity and security of the software supply chain. It provides a detailed overview of the project’s components, test results, and other critical metadata, such as the tools used in the analysis.
 
-For reference, you can find an SSCG example here: [SSCG Example](./priv/result/sscg-example.json), and more information about SBOM here: [SBOM](/docs/sbom.md).
+Once the SSCG is generated, it is submitted—along with the SBOM (that includes more information about the project and its dependencies)—to a web service for further processing. This is done by sending both files to an HTTP endpoint, where the SSCG undergoes additional validation or integration into a broader system. The process ensures that the project’s dependencies and test outcomes are well-documented and traceable, providing greater transparency and confidence in the software’s supply chain.
+
+For reference, you can find an SSCG example here: [SSCG Example](./priv/result/sscg-example.json), and more information about SSCG here: [SSCG](/docs/sscg.md).
 
 ## Requeriments
 

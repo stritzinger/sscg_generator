@@ -1,9 +1,151 @@
 {
     "metadata":{
-        "timestamp":"2024-09-12T17:35:12Z",
-        "authors":[]
+        "timestamp":"2024-09-18T22:22:20Z",
+        "authors":[
+            {
+                "name":"asa",
+                "email":"asa@same.es"
+            },
+            {
+                "name":"asa",
+                "email":"sasa@sd.es"
+            }
+        ],
+        "tools":{
+            "components":[
+                {
+                    "data":[
+                        {
+                            "name":"CLI configuration flags",
+                            "type":"configuration",
+                            "contents":{
+                                "attachments":{
+                                    "content":""
+                                }
+                            }
+                        }
+                    ],
+                    "name":"ReSCALE SSCG Generator",
+                    "type":"application",
+                    "version":"0.1.0",
+                    "description":"A ReSCALE certified tool to generate SSCGs",
+                    "hashes":[
+                        {
+                            "content":"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12",
+                            "alg":"SHA-1"
+                        }
+                    ],
+                    "purl":"pkg:hex/sscg_generator@0.1.0"
+                },
+                {
+                    "data":[
+                        {
+                            "name":"Docker Environment",
+                            "type":"configuration",
+                            "contents":{
+                                "attachments":{
+                                    "content":"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false"
+                                }
+                            }
+                        }
+                    ],
+                    "name":"ReSCALE Static Code Analysis Module",
+                    "type":"container",
+                    "version":"1.0.0",
+                    "description":"A ReSCALE certified container to execute static testing",
+                    "hashes":[
+                        {
+                            "content":"35d1c8f259129dc800ec8e073bb68f995424619c",
+                            "alg":"SHA-1"
+                        }
+                    ],
+                    "purl":"pkg:docker/static_code_analysis_module@1.0.0"
+                }
+            ]
+        }
     },
     "bomFormat":"CycloneDX",
-    "serialNumber":"urn:uuid-0981a583-ad15-4e52-969c-584eec1585f3",
+    "declarations":{
+        "targets":{
+            "components":[
+                {
+                    "bom-ref":"ref_component_mapz",
+                    "description":"Extensions to the Erlang maps module",
+                    "hashes":[
+                        {
+                            "alg":"SHA-256",
+                            "content":"4b68df5cf0522e0d6545df7b681bc052865cdb78405ad4cc9c55fe45ee7b25be"
+                        }
+                    ],
+                    "licenses":[
+                        {
+                            "license":{
+                                "id":"MIT",
+                                "properties":[]
+                            }
+                        }
+                    ],
+                    "name":"mapz",
+                    "purl":"pkg:hex/mapz@2.4.0",
+                    "type":"library",
+                    "version":"2.4.0"
+                }
+            ]
+        },
+        "attestations":[
+            {
+                "map":[
+                    {
+                        "counterClaims":[
+                            "Claim: Test Suite grisp_test_result.txt found something!"
+                        ],
+                        "requirement":"https://rescale-project.eu/standard/1.0.0/conformance/complete"
+                    }
+                ],
+                "assessor":"Producer Reference",
+                "summary":"Mapping of Requirements to Claims"
+            }
+        ],
+        "claims":[
+            {
+                "evidence":[
+                    "Memory error: memory corruption in file main.c at line 23"
+                ],
+                "target":"todo",
+                "bom-ref":"Claim: Test Suite grisp_test_result.txt found something!"
+            }
+        ],
+        "evidence":[
+            {
+                "data":[
+                    {
+                        "contents":{
+                            "attachments":"Memory error: memory corruption in file main.c at line 23"
+                        }
+                    }
+                ],
+                "description":"TODO - Specify test results output",
+                "bom-ref":"Memory error: memory corruption in file main.c at line 23"
+            }
+        ]
+    },
+    "definitions":{
+        "standards":[
+            {
+                "name":"The ReSCALE Standard",
+                "version":"1.0.0",
+                "description":"The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)",
+                "bom_ref":"https://rescale-project.eu/standard/1.0.0",
+                "requirements":[
+                    {
+                        "title":"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings",
+                        "bom_ref":"https://rescale-project.eu/standard/1.0.0/conformance/complete",
+                        "identifier":"/rescale/1.0.0/conformance/complete"
+                    }
+                ]
+            }
+        ]
+    },
+    "serialNumber":"urn:uuid-9fbd8da3-dab6-4bbe-8702-ce2eabb2f1a9",
     "specVersion":"1.5"
 }

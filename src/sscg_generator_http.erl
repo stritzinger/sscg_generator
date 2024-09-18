@@ -1,6 +1,6 @@
 -module(sscg_generator_http).
 
--export([get_json/1]).
+-export([get_json/1, post_json/2]).
 
 -include_lib("kernel/include/logger.hrl").
 
@@ -42,4 +42,41 @@ get_json(URL) ->
             {error, {unexpected_status, StatusCode}};
         {error, Reason} ->
             {error, {request_failed, Reason}}
+    end.
+
+% @doc 
+% Perform an HTTP POST request with a JSON payload and return the decoded JSON response.
+% 
+% This function sends a JSON-encoded payload to the provided URL. It handles
+% errors such as request failures and invalid response status codes.
+-spec post_json(URL, JsonData) -> Result
+    when URL      :: binary(),
+         JsonData :: term(),
+         Result   :: ok
+                   | {error, {encode_error,      Reason}}
+                   | {error, {request_failed,    Reason}}
+                   | {error, {unexpected_status, StatusCode}},
+         Reason :: term(),
+         StatusCode :: non_neg_integer().
+post_json(URL, JsonData) ->
+    Headers = [{"Content-Type", "application/json"}],
+    EncodeOpts = [{indent, 4}, 
+                  {float_format, 
+                  [{scientific, 2}]},
+                  native_forward_slash,
+                  skip_undefined],
+    try 
+        JsonPayload = jsone:encode(JsonData, EncodeOpts),
+        Options = [{follow_redirect, true}],
+        case hackney:request(post, URL, Headers, JsonPayload, Options) of
+            {ok, 200, _RespHeaders, _ClientRef} -> 
+                ok;
+            {ok, StatusCode, _RespHeaders, _ClientRef} ->
+                {error, {unexpected_status, StatusCode}};
+            {error, Reason} ->
+                {error, {request_failed, Reason}}
+        end
+    catch
+        _:{error, EncodingReason} ->
+            {error, {encode_error, EncodingReason}}
     end.

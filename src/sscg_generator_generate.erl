@@ -16,7 +16,6 @@
 
 %--- Types ---------------------------------------------------------------------
 
-
 -type decoded_json() :: map(). 
 -type file_path() :: binary(). 
 -type spec_version() :: <<_ : _*8>>.  % A version-like format, i.e., "1.0", "2.0"
@@ -116,14 +115,17 @@ generate(#{
             sscg_generator_cli:abort("Error: Invalid SBOM format. ~n", [])
     end,
 
-    SpecVersion = maps:get(<<"specVersion">>, SBOMData),
-    Targets     = maps:get(<<"components">>,  SBOMData, []),
+    SpecVersion   = maps:get(<<"specVersion">>, SBOMData),
+    Targets       = maps:get(<<"components">>,  SBOMData, []),
+    CommandName   = atom_to_list(?FUNCTION_NAME),
+    Configuration = sscg_generator_cli:serialize_args(Args, cli(), CommandName),
 
     SSCGData = generate_sscg(
-        #{spec_version => SpecVersion, 
-          authors      => Authors, 
-          targets      => Targets,
-          tests        => [{TestName, TestData}]
+        #{spec_version  => SpecVersion, 
+          authors       => Authors, 
+          targets       => Targets,
+          tests         => [{TestName, TestData}],
+          configuration => Configuration
         }),
 
     OutputPath = maps:get(output, Args),
@@ -156,10 +158,11 @@ generate(#{
                tests        := [{binary(), binary()}]},
       Result :: map().
 generate_sscg(
-    #{spec_version := SpecVersion, 
-      authors      := Authors,
-      targets      := Targets,
-      tests        := Tests
+    #{spec_version  := SpecVersion, 
+      authors       := Authors,
+      targets       := Targets,
+      tests         := Tests,
+      configuration := Configuration
     }) ->
 
     Timestamp = sscg_generator_utils:current_timestamp(),
@@ -178,10 +181,14 @@ generate_sscg(
         metadata     => #{
             timestamp => Timestamp,
             authors   => Authors,
-            tools     => #{components => 
-                            [generate_tool_info(sscg_generator),
-                             generate_tool_info(static_code_analysis_module)]
-                          }
+            tools     => 
+                #{components => 
+                    [
+                        generate_tool_info(sscg_generator, Configuration),
+                        generate_tool_info(static_code_analysis_module,
+                                           <<"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false">> )
+                    ]
+                }
         },
         definitions  => #{
             standards => [
@@ -192,9 +199,9 @@ generate_sscg(
                 version      => ReSCALEVersion,
                 requirements => [
                   #{
-                    bom_ref   => ReSCALEStandardConformanceURL,
+                    bom_ref    => ReSCALEStandardConformanceURL,
                     identifier => <<"/rescale/", ReSCALEVersion/binary ,"/conformance/complete">>,
-                    title     => <<"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings">>
+                    title      => <<"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings">>
                   }
                 ]
               }
@@ -287,10 +294,11 @@ get_schema(SpecVersion) ->
 %         nomatch -> false
 %     end.
 
--spec generate_tool_info(Tool) -> Result 
- when Tool   :: sscg_generator | static_code_analysis_module,
-      Result :: map().
-generate_tool_info(sscg_generator) -> 
+-spec generate_tool_info(Tool, Configuration) -> Result 
+ when Tool           :: sscg_generator | static_code_analysis_module,
+      Configuration  :: binary(),
+      Result         :: map().
+generate_tool_info(sscg_generator, Configuration) -> 
     {ok, Version} = sscg_generator_app_info:get_version(),
     VersionBinary = list_to_binary(Version),
 
@@ -308,7 +316,7 @@ generate_tool_info(sscg_generator) ->
             type => configuration,
             contents => #{
                 attachments => #{
-                    content => <<"">> % TODO: Add config flags here
+                    content => Configuration
                     }
                 }
             }
@@ -318,7 +326,7 @@ generate_tool_info(sscg_generator) ->
                      content => <<"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12">>}]
     };
 %% TODO: Dynamically generate this or extract to deps file
-generate_tool_info(static_code_analysis_module = ToolName) ->
+generate_tool_info(static_code_analysis_module = ToolName, Configuration) ->
     Version = <<"1.0.0">>,
     Name = atom_to_binary(ToolName, utf8),
 
@@ -334,7 +342,7 @@ generate_tool_info(static_code_analysis_module = ToolName) ->
             type     => configuration,
             contents => #{
                 attachments => #{
-                content => <<"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false">> 
+                content => Configuration
                 }
             }
             }

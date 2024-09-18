@@ -10,6 +10,7 @@
 -export([confirm/1]).
 -export([parse_range/2]).
 -export([parse_authors/2]).
+-export([serialize_args/3]).
 
 % Callbacks
 -export([format/2]).
@@ -98,6 +99,52 @@ parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) ->
                             abort("Failed parsing authors. Reason: ~s. ~n",[invalid_format])
                     end
                 end, AuthorEntries).
+
+% @doc Serializes the Args map back into a command-line string using 
+% the CLI structure.
+-spec serialize_args(Args, CLI, CommandName) -> Result
+  when Args        :: map(), 
+       CLI         :: map(),
+       CommandName :: binary(),
+       Result      :: binary().
+serialize_args(Args, CLI, CommandName) ->
+    Commands = maps:get(commands, CLI),
+    Command = maps:get(CommandName, Commands),
+    Arguments = maps:get(arguments, Command),
+    
+    SerializedArgsList = lists:map(
+        fun(ArgSpec) ->
+            ArgName = maps:get(name, ArgSpec),
+            serialize_arg(ArgName, Args, ArgSpec)
+        end,
+        Arguments),
+    list_to_binary(string:join(SerializedArgsList, " ")).
+
+-spec serialize_arg(atom(), map(), map()) -> binary().
+serialize_arg(ArgName, Args, ArgSpec) ->
+    case maps:find(ArgName, Args) of
+        {ok, Value} ->
+            LongOpt = maps:get(long, ArgSpec),
+            case maps:get(type, ArgSpec) of
+                binary ->
+                    io_lib:format("-~s ~s", [LongOpt, binary_to_list(Value)]);
+                {custom, _ParseFun} when ArgName == authors ->
+                    io_lib:format("-~s ~s", [LongOpt, binary_to_list( serialize_authors(Value))]);
+                _ -> <<"">>
+            end;
+        error -> <<"">>  % If the argument is not present, return an empty string
+    end.
+
+-spec serialize_authors([#{name := binary(), email := binary()}]) -> binary().
+serialize_authors(Authors) ->
+    AuthorEntries = lists:map(fun(Author) ->
+                                    Name = maps:get(name, Author),
+                                    Email = maps:get(email, Author),
+                                    NameAndEmail = [binary_to_list(Name), ":", binary_to_list(Email)],
+                                    string:join(NameAndEmail, "")
+                                end, Authors),
+    list_to_binary(string:join(AuthorEntries, ",")).
+
 %--- Callbacks -----------------------------------------------------------------
 
 format(Event, _Config) ->

@@ -1,16 +1,7 @@
 {
     "metadata":{
-        "timestamp":"2024-09-18T22:22:20Z",
-        "authors":[
-            {
-                "name":"asa",
-                "email":"asa@same.es"
-            },
-            {
-                "name":"asa",
-                "email":"sasa@sd.es"
-            }
-        ],
+        "timestamp":"2024-09-18T23:36:39Z",
+        "authors":[],
         "tools":{
             "components":[
                 {
@@ -20,7 +11,7 @@
                             "type":"configuration",
                             "contents":{
                                 "attachments":{
-                                    "content":""
+                                    "content":"--sbom ./priv/input/grisp_sbom.json --test ./priv/input/grisp_test_result.txt --output ./priv/output/sscg_output.json --authors "
                                 }
                             }
                         }
@@ -146,6 +137,6 @@
             }
         ]
     },
-    "serialNumber":"urn:uuid-9fbd8da3-dab6-4bbe-8702-ce2eabb2f1a9",
+    "serialNumber":"urn:uuid-eff901d2-8756-4c76-b184-74b318f51bcd",
     "specVersion":"1.5"
 }

@@ -115,15 +115,16 @@ generate(#{
             sscg_generator_cli:abort("Error: Invalid SBOM format. ~n", [])
     end,
 
-    SpecVersion   = maps:get(<<"specVersion">>, SBOMData),
-    Targets       = maps:get(<<"components">>,  SBOMData, []),
+    SpecVersion   = <<"1.6">>,
+    Meta          = maps:get(<<"metadata">>,  SBOMData, []),
+    Target        = maps:get(<<"component">>,  Meta, []),
     CommandName   = atom_to_list(?FUNCTION_NAME),
     Configuration = sscg_generator_cli:serialize_args(Args, cli(), CommandName),
 
     SSCGData = generate_sscg(
         #{spec_version  => SpecVersion, 
           authors       => Authors, 
-          targets       => Targets,
+          target        => Target,
           tests         => [{TestName, TestData}],
           configuration => Configuration
         }),
@@ -154,13 +155,13 @@ generate(#{
 -spec generate_sscg(Map) -> Result
  when Map :: #{spec_version := binary(), 
                authors      := [binary()],
-               targets      := [map()],
+               target       := map(),
                tests        := [{binary(), binary()}]},
       Result :: map().
 generate_sscg(
     #{spec_version  := SpecVersion, 
       authors       := Authors,
-      targets       := Targets,
+      target        := Target ,
       tests         := Tests,
       configuration := Configuration
     }) ->
@@ -208,7 +209,7 @@ generate_sscg(
             ]
         },
         declarations => #{
-            targets      => #{components => Targets},
+            targets        => #{components => [maps:put(<<"bom-ref">>, <<"ReSCALE Static Code Analysis Target">>, Target)]},
             % assesors     => [],
             attestations => [
                 #{
@@ -225,7 +226,7 @@ generate_sscg(
             claims        => [
                 #{
                     <<"bom-ref">> => Name,
-                    target        => todo,
+                    target        => <<"ReSCALE Static Code Analysis Target">>,
                     evidence      => [Content]
                 } || {Name, Content} <- Claims
             ],

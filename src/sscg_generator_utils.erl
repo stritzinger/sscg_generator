@@ -24,7 +24,7 @@ current_timestamp() ->
 -spec serial_number() -> binary().
 serial_number() ->
     UUID = uuid(),
-    <<"urn:uuid-", UUID/binary>>.
+    <<"urn:uuid:", UUID/binary>>.
 
 uuid() -> uuid:uuid_to_string(uuid:get_v4(), binary_standard).
 

@@ -3,16 +3,28 @@
     "specVersion": "1.5",
     "serialNumber": "06e3d503-ffa5-4d16-a0ba-b6cdb69868b9",
     "version": 1,
-    "metadata": {
-      "timestamp": "2024-09-12T15:12:03Z",
-      "tools": [
-        {
-          "name": "rebar3_sbom",
-          "hashes": [],
-          "externalReferences": []
-        }
-      ],
-      "lifecycles": []
+    "metadata":{
+      "component":{
+         "bom-ref":"ref_component_grisp",
+         "description":"GRiSP Erlang Runtime Library",
+         "licenses":[
+            {
+               "license":{
+                  "id":"Apache-2.0"
+               }
+            }
+         ],
+         "name":"grisp",
+         "purl":"pkg:hex/grisp@2.6.0",
+         "type":"library",
+         "version":"2.6.0"
+      },
+      "timestamp":"2024-09-18T14:03:23+00:00",
+      "tools":[
+         {
+            "name":"rebar3_sbom"
+         }
+      ]
     },
     "components": [
       {
@@ -38,9 +50,16 @@
         "purl": "pkg:hex/mapz@2.4.0"
       }
     ],
-    "dependencies": [
+    "dependencies":[
       {
-        "ref": "ref_component_mapz"
+         "dependsOn":[
+            "ref_component_mapz"
+         ],
+         "ref":"ref_component_grisp"
+      },
+      {
+         "dependsOn":[],
+         "ref":"ref_component_mapz"
       }
     ],
     "vulnerabilities": [],

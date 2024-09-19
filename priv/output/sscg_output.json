@@ -1,6 +1,6 @@
 {
     "metadata":{
-        "timestamp":"2024-09-18T23:36:39Z",
+        "timestamp":"2024-09-19T11:23:59Z",
         "authors":[],
         "tools":{
             "components":[
@@ -11,7 +11,7 @@
                             "type":"configuration",
                             "contents":{
                                 "attachments":{
-                                    "content":"--sbom ./priv/input/grisp_sbom.json --test ./priv/input/grisp_test_result.txt --output ./priv/output/sscg_output.json --authors "
+                                    "content":"--sbom priv/input/grisp_sbom.json --test priv/input/grisp_test_result.txt --output ./priv/output/sscg_output.json --authors "
                                 }
                             }
                         }
@@ -57,32 +57,6 @@
     },
     "bomFormat":"CycloneDX",
     "declarations":{
-        "targets":{
-            "components":[
-                {
-                    "bom-ref":"ref_component_mapz",
-                    "description":"Extensions to the Erlang maps module",
-                    "hashes":[
-                        {
-                            "alg":"SHA-256",
-                            "content":"4b68df5cf0522e0d6545df7b681bc052865cdb78405ad4cc9c55fe45ee7b25be"
-                        }
-                    ],
-                    "licenses":[
-                        {
-                            "license":{
-                                "id":"MIT",
-                                "properties":[]
-                            }
-                        }
-                    ],
-                    "name":"mapz",
-                    "purl":"pkg:hex/mapz@2.4.0",
-                    "type":"library",
-                    "version":"2.4.0"
-                }
-            ]
-        },
         "attestations":[
             {
                 "map":[
@@ -99,10 +73,10 @@
         ],
         "claims":[
             {
+                "target":"ReSCALE Static Code Analysis Target",
                 "evidence":[
                     "Memory error: memory corruption in file main.c at line 23"
                 ],
-                "target":"todo",
                 "bom-ref":"Claim: Test Suite grisp_test_result.txt found something!"
             }
         ],
@@ -118,7 +92,26 @@
                 "description":"TODO - Specify test results output",
                 "bom-ref":"Memory error: memory corruption in file main.c at line 23"
             }
-        ]
+        ],
+        "targets":{
+            "components":[
+                {
+                    "bom-ref":"ReSCALE Static Code Analysis Target",
+                    "description":"GRiSP Erlang Runtime Library",
+                    "licenses":[
+                        {
+                            "license":{
+                                "id":"Apache-2.0"
+                            }
+                        }
+                    ],
+                    "name":"grisp",
+                    "purl":"pkg:hex/grisp@2.6.0",
+                    "type":"library",
+                    "version":"2.6.0"
+                }
+            ]
+        }
     },
     "definitions":{
         "standards":[
@@ -137,6 +130,6 @@
             }
         ]
     },
-    "serialNumber":"urn:uuid-eff901d2-8756-4c76-b184-74b318f51bcd",
-    "specVersion":"1.5"
+    "serialNumber":"urn:uuid:97111c3f-a8bd-49ca-bbe1-5145591de3d1",
+    "specVersion":"1.6"
 }

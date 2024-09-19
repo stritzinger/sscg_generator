@@ -216,7 +216,7 @@ generate_sscg(
                     map      => [
                       #{
                         requirement   => ReSCALEStandardConformanceURL,
-                        counterClaims => [Name || {Name, _Content } <- Claims]
+                        claims => [Name || {Name, _Content } <- Claims]
                       }
                     ]
                   }

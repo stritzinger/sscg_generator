@@ -6,8 +6,7 @@
 %% Retrieves the name of the application by consulting the `.app.src` file.
 -spec get_app_name() -> atom().
 get_app_name() ->
-    {ok, [{application, AppName, _}]} = file:consult("src/sscg_generator.app.src"),
-    AppName.
+    sscg_generator.
 
 %% @doc
 %% Retrieves the version of the application based on the application name.

@@ -57,7 +57,7 @@ cli() ->
                         help => {"[-p <output_path>]", 
                                  fun() -> "Output file path and name" end},
                         type => binary,
-                        default => <<"./priv/output/sscg_output.json">>,
+                        default => <<"sscg.json">>,
                         required => false
                     },
                     #{

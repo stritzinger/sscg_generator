@@ -192,13 +192,13 @@ generate_sscg(
         definitions  => #{
             standards => [
               #{
-                bom_ref      => ReSCALEStandardURL,
+                'bom-ref'    => ReSCALEStandardURL,
                 name         => <<"The ReSCALE Standard">>,
                 description  => <<"The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)">>,
                 version      => ReSCALEVersion,
                 requirements => [
                   #{
-                    bom_ref    => ReSCALEStandardConformanceURL,
+                    'bom-ref'  => ReSCALEStandardConformanceURL,
                     identifier => <<"/rescale/", ReSCALEVersion/binary ,"/conformance/complete">>,
                     title      => <<"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings">>
                   }
@@ -234,7 +234,7 @@ generate_sscg(
                     description   => <<"TODO - Specify test results output">>,
                     data          => [
                         #{
-                            contents => #{attachment => Content}
+                            contents => #{attachment => #{content => Content}}
                         }
                     ]
                 } || {_Name, Content} <- Claims

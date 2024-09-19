@@ -1,6 +1,6 @@
 {
     "metadata":{
-        "timestamp":"2024-09-19T11:54:06Z",
+        "timestamp":"2024-09-19T13:00:01Z",
         "authors":[],
         "tools":{
             "components":[
@@ -85,7 +85,9 @@
                 "data":[
                     {
                         "contents":{
-                            "attachment":"Memory error: memory corruption in file main.c at line 23"
+                            "attachment":{
+                                "content":"Memory error: memory corruption in file main.c at line 23"
+                            }
                         }
                     }
                 ],
@@ -119,17 +121,17 @@
                 "name":"The ReSCALE Standard",
                 "version":"1.0.0",
                 "description":"The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)",
-                "bom_ref":"https://rescale-project.eu/standard/1.0.0",
+                "bom-ref":"https://rescale-project.eu/standard/1.0.0",
                 "requirements":[
                     {
                         "title":"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings",
-                        "bom_ref":"https://rescale-project.eu/standard/1.0.0/conformance/complete",
+                        "bom-ref":"https://rescale-project.eu/standard/1.0.0/conformance/complete",
                         "identifier":"/rescale/1.0.0/conformance/complete"
                     }
                 ]
             }
         ]
     },
-    "serialNumber":"urn:uuid:c9191a2f-0498-42e9-a92e-4a2c123c6c0a",
+    "serialNumber":"urn:uuid:ac7aeb9a-5735-4325-aa70-0adc09f31220",
     "specVersion":"1.6"
 }

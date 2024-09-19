@@ -1,6 +1,6 @@
 {
     "metadata":{
-        "timestamp":"2024-09-19T11:23:59Z",
+        "timestamp":"2024-09-19T11:54:06Z",
         "authors":[],
         "tools":{
             "components":[
@@ -10,7 +10,7 @@
                             "name":"CLI configuration flags",
                             "type":"configuration",
                             "contents":{
-                                "attachments":{
+                                "attachment":{
                                     "content":"--sbom priv/input/grisp_sbom.json --test priv/input/grisp_test_result.txt --output ./priv/output/sscg_output.json --authors "
                                 }
                             }
@@ -34,7 +34,7 @@
                             "name":"Docker Environment",
                             "type":"configuration",
                             "contents":{
-                                "attachments":{
+                                "attachment":{
                                     "content":"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false"
                                 }
                             }
@@ -85,7 +85,7 @@
                 "data":[
                     {
                         "contents":{
-                            "attachments":"Memory error: memory corruption in file main.c at line 23"
+                            "attachment":"Memory error: memory corruption in file main.c at line 23"
                         }
                     }
                 ],
@@ -130,6 +130,6 @@
             }
         ]
     },
-    "serialNumber":"urn:uuid:97111c3f-a8bd-49ca-bbe1-5145591de3d1",
+    "serialNumber":"urn:uuid:c9191a2f-0498-42e9-a92e-4a2c123c6c0a",
     "specVersion":"1.6"
 }

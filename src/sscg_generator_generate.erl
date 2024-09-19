@@ -138,12 +138,10 @@ generate(#{
                         "JSON successfully stored to ~s~n", [Path])));
         {error, {encode_errors, EncodingReason}} -> 
             sscg_generator_cli:abort(
-                    io_lib:format(
-                        "Failed to encode JSON. Reason: ~p~n", [EncodingReason]));
+                        "Failed to encode JSON. Reason: ~p~n", [EncodingReason]);
         {error, {write_failed, WriteReason}} -> 
             sscg_generator_cli:abort(
-                    io_lib:format(
-                        "Failed to store JSON. Reason: ~p~n", [WriteReason]))
+                        "Failed to store JSON. Reason: ~p~n", [WriteReason])
     end,
     ok.
 
@@ -236,7 +234,7 @@ generate_sscg(
                     description   => <<"TODO - Specify test results output">>,
                     data          => [
                         #{
-                            contents => #{attachments => Content}
+                            contents => #{attachment => Content}
                         }
                     ]
                 } || {_Name, Content} <- Claims
@@ -316,7 +314,7 @@ generate_tool_info(sscg_generator, Configuration) ->
             name => <<"CLI configuration flags">>,
             type => configuration,
             contents => #{
-                attachments => #{
+                attachment => #{
                     content => Configuration
                     }
                 }
@@ -342,7 +340,7 @@ generate_tool_info(static_code_analysis_module = ToolName, Configuration) ->
             name     => <<"Docker Environment">>, 
             type     => configuration,
             contents => #{
-                attachments => #{
+                attachment => #{
                 content => Configuration
                 }
             }

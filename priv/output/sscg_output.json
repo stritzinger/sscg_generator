@@ -1,6 +1,6 @@
 {
     "metadata":{
-        "timestamp":"2024-09-19T13:00:01Z",
+        "timestamp":"2024-09-26T11:25:26Z",
         "authors":[],
         "tools":{
             "components":[
@@ -11,7 +11,7 @@
                             "type":"configuration",
                             "contents":{
                                 "attachment":{
-                                    "content":"--sbom priv/input/grisp_sbom.json --test priv/input/grisp_test_result.txt --output ./priv/output/sscg_output.json --authors "
+                                    "content":"--sbom ./priv/input/grisp_sbom.json --test ./priv/input/tests --output ./priv/output/sscg_output.json --authors "
                                 }
                             }
                         }
@@ -57,12 +57,29 @@
     },
     "bomFormat":"CycloneDX",
     "declarations":{
+        "claims":[
+            {
+                "target":"ReSCALE Static Code Analysis Target",
+                "evidence":[
+                    "Evidence: error: invalid conversion from 'int' to 'char*'."
+                ],
+                "bom-ref":"Claim: Test Suite grisp_test_result_1.txt found something!"
+            },
+            {
+                "target":"ReSCALE Static Code Analysis Target",
+                "evidence":[
+                    "Evidence: Memory error: memory corruption in file main.c at line 23."
+                ],
+                "bom-ref":"Claim: Test Suite grisp_test_result_2.txt found something!"
+            }
+        ],
         "attestations":[
             {
                 "map":[
                     {
-                        "counterClaims":[
-                            "Claim: Test Suite grisp_test_result.txt found something!"
+                        "claims":[
+                            "Claim: Test Suite grisp_test_result_1.txt found something!",
+                            "Claim: Test Suite grisp_test_result_2.txt found something!"
                         ],
                         "requirement":"https://rescale-project.eu/standard/1.0.0/conformance/complete"
                     }
@@ -71,16 +88,20 @@
                 "summary":"Mapping of Requirements to Claims"
             }
         ],
-        "claims":[
-            {
-                "target":"ReSCALE Static Code Analysis Target",
-                "evidence":[
-                    "Memory error: memory corruption in file main.c at line 23"
-                ],
-                "bom-ref":"Claim: Test Suite grisp_test_result.txt found something!"
-            }
-        ],
         "evidence":[
+            {
+                "data":[
+                    {
+                        "contents":{
+                            "attachment":{
+                                "content":"error: invalid conversion from 'int' to 'char*'"
+                            }
+                        }
+                    }
+                ],
+                "description":"TODO - Specify test results output",
+                "bom-ref":"Evidence: error: invalid conversion from 'int' to 'char*'."
+            },
             {
                 "data":[
                     {
@@ -92,7 +113,7 @@
                     }
                 ],
                 "description":"TODO - Specify test results output",
-                "bom-ref":"Memory error: memory corruption in file main.c at line 23"
+                "bom-ref":"Evidence: Memory error: memory corruption in file main.c at line 23."
             }
         ],
         "targets":{
@@ -132,6 +153,6 @@
             }
         ]
     },
-    "serialNumber":"urn:uuid:ac7aeb9a-5735-4325-aa70-0adc09f31220",
+    "serialNumber":"urn:uuid:587ebbfb-d93c-42d8-bbd5-9e06ccc5e9a6",
     "specVersion":"1.6"
 }

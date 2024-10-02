@@ -18,6 +18,7 @@
 
 -type decoded_json() :: map(). 
 -type file_path() :: binary(). 
+-type folder_path() :: binary(). 
 -type spec_version() :: <<_ : _*8>>.  % A version-like format, i.e., "1.0", "2.0"
 %--- API -----------------------------------------------------------------------
 
@@ -45,8 +46,8 @@ cli() ->
                         name => test,
                         long => "-test",
                         short => $t,
-                        help => {"[-t <test_file>]", 
-                                 fun() -> "Test file path" end},
+                        help => {"[-t <test_folder>]", 
+                                 fun() -> "Test folder path" end},
                         type => binary,
                         required => true
                     },
@@ -77,36 +78,44 @@ cli() ->
 
 % @doc The main task to generate a JSON SSCG from a SBOM file and metadata.
 -spec generate(Args) -> Result
-  when Args :: #{sbom := file_path(), 
-                 test := file_path(),
+  when Args :: #{sbom    := file_path(), 
+                 test    := folder_path(),
                  authors := list()},
        Result :: ok | no_return().
 generate(#{
-    sbom    := SBOM_File,
-    test    := Test_File,  
+    sbom    := SBOMFile,
+    test    := TestFolder,  
     authors := Authors} = Args) ->
 
-    TestName = sscg_generator_utils:get_filename_from_path(Test_File),
-    TestData = 
-        case file:read_file(Test_File) of
-            {ok, FileData}      ->  FileData;
+    Tests =
+        case file:list_dir(TestFolder) of
+            {ok, Files} ->
+                lists:map(
+                    fun(File) ->
+                        FilePath = filename:join(TestFolder, File),
+                        FileName = sscg_generator_utils:get_filename_from_path(FilePath),
+                        case file:read_file(FilePath) of
+                            {ok, Content} ->
+                                {FileName, Content};
+                            {error, Reason} ->
+                                sscg_generator_cli:abort("Failed to read file ~s: ~p~n", [FilePath, Reason])
+                        end
+                    end, Files);
             {error, Reason} ->
-                sscg_generator_cli:abort(
-                    "Error: Cannot read file ~s. Reason: ~p~n", 
-                    [Test_File, Reason])
+                sscg_generator_cli:abort("Failed to list directory: ~p~n", [Reason])
         end,
 
     SBOMData =
-        case sscg_generator_utils:read_json(SBOM_File) of
+        case sscg_generator_utils:read_json(SBOMFile) of
             {ok, JsonData} -> JsonData;
             {error, {file_not_available, NotAvailableReason}} ->
                 sscg_generator_cli:abort(
                     "Error: Cannot read file ~s. Reason: ~p~n", 
-                    [SBOM_File, NotAvailableReason]);
+                    [SBOMFile, NotAvailableReason]);
             {error, invalid_json} ->
                 sscg_generator_cli:abort(
                     "Error: Invalid JSON format in ~s~n", 
-                    [SBOM_File])
+                    [SBOMFile])
         end,
 
     case is_valid_sbom(SBOMData) of
@@ -125,7 +134,7 @@ generate(#{
         #{spec_version  => SpecVersion, 
           authors       => Authors, 
           target        => Target,
-          tests         => [{TestName, TestData}],
+          tests         => Tests,
           configuration => Configuration
         }),
 
@@ -154,7 +163,7 @@ generate(#{
  when Map :: #{spec_version := binary(), 
                authors      := [binary()],
                target       := map(),
-               tests        := [{binary(), binary()}]},
+               tests        := [{ Name :: binary(), Content :: binary()}]},
       Result :: map().
 generate_sscg(
     #{spec_version  := SpecVersion, 
@@ -225,12 +234,12 @@ generate_sscg(
                 #{
                     <<"bom-ref">> => Name,
                     target        => <<"ReSCALE Static Code Analysis Target">>,
-                    evidence      => [Content]
+                    evidence      => [to_evidence(Content)]
                 } || {Name, Content} <- Claims
             ],
             evidence      => [
                 #{
-                    <<"bom-ref">> => Content,
+                    <<"bom-ref">> => to_evidence(Content),
                     description   => <<"TODO - Specify test results output">>,
                     data          => [
                         #{
@@ -354,3 +363,7 @@ generate_tool_info(static_code_analysis_module = ToolName, Configuration) ->
 to_claim(Name) -> 
     list_to_binary(
         io_lib:format("Claim: Test Suite ~s found something!", [Name])).
+
+to_evidence(Name) -> 
+    list_to_binary(
+        io_lib:format("Evidence: ~s.", [Name])).

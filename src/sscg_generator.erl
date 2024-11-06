@@ -4,7 +4,7 @@
 -behaviour(application).
 -behaviour(cli).
 
--define(REQUIRED_OTP_VERSION, 27).
+-define(REQUIRED_OTP_VERSION, 26).
 
 % Callbacks
 -export([main/1]).
@@ -66,7 +66,7 @@ check_otp_version(Version) ->
         list_to_integer(erlang:system_info(otp_release))
     ).
 
-check_otp_version(Desired, Actual) when Desired > Actual ->
+check_otp_version(Desired, Actual) when Actual < Desired ->
     sscg_generator_cli:abort("OTP version ~p too old. At least ~p required.", [
         Actual,
         Desired

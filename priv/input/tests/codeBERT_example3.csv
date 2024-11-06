@@ -1,0 +1,3 @@
+Function Name,Start Line,End Line,Function Body,Logits,Vulnerable
+clock_get_ticks_per_second,37,37,"clock_get_ticks_per_second() -> erlang:nif_error(""NIF library not loaded"").
+","[[0.8990782499313354, -0.8187983632087708]]",0

@@ -36,8 +36,12 @@ For reference, you can find an SSCG example here: [SSCG Example](./priv/result/s
 
 ## Requeriments
 
+For RESCALE, the following are required:
+
 - Erlang 27.0
 - Rebar 3.24.0
+
+However, due to dependencies (specifically argparse), the minimum OTP version needed is 26.
 
 ## Build
 

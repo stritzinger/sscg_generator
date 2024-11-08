@@ -8,9 +8,6 @@
 -export([group_by/3]).
 -endif.
 
-% Includes
--include_lib("kernel/include/logger.hrl").
-
 % CycloneDX endpoint
 -define(CYCLONEDX_BASE_URL, "http://cyclonedx.org/schema/").
 
@@ -125,15 +122,18 @@ generate(#{
     end,
 
     SpecVersion   = <<"1.6">>,
-    Meta          = maps:get(<<"metadata">>,  SBOMData, []),
-    Target        = maps:get(<<"component">>,  Meta, []),
+    Targets = case maps:get(<<"metadata">>, SBOMData, undefined) of
+        #{<<"component">> := Component} ->
+           [Component];
+        _ -> []
+    end,
     CommandName   = atom_to_list(?FUNCTION_NAME),
     Configuration = sscg_generator_cli:serialize_args(Args, cli(), CommandName),
 
     SSCGData = generate_sscg(
         #{spec_version  => SpecVersion, 
           authors       => Authors, 
-          target        => Target,
+          targets       => Targets,
           tests         => Tests,
           configuration => Configuration
         }),
@@ -162,13 +162,13 @@ generate(#{
 -spec generate_sscg(Map) -> Result
  when Map :: #{spec_version := binary(), 
                authors      := [binary()],
-               target       := map(),
+               targets       := [map()],
                tests        := [{ Name :: binary(), Content :: binary()}]},
       Result :: map().
 generate_sscg(
     #{spec_version  := SpecVersion, 
       authors       := Authors,
-      target        := Target ,
+      targets       := Targets ,
       tests         := Tests,
       configuration := Configuration
     }) ->
@@ -216,8 +216,7 @@ generate_sscg(
             ]
         },
         declarations => #{
-            targets        => #{components => [maps:put(<<"bom-ref">>, <<"ReSCALE Static Code Analysis Target">>, Target)]},
-            % assesors     => [],
+            targets        => #{components => Targets},
             attestations => [
                 #{
                     assessor => <<"Producer Reference">>,
@@ -233,7 +232,8 @@ generate_sscg(
             claims        => [
                 #{
                     <<"bom-ref">> => Name,
-                    target        => <<"ReSCALE Static Code Analysis Target">>,
+                    %TODO: Include real target
+                    target        => undefined,
                     evidence      => [to_evidence(Content)]
                 } || {Name, Content} <- Claims
             ],

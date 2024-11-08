@@ -1,0 +1,142 @@
+{
+    "metadata":{
+        "timestamp":"2024-11-08T19:58:18Z",
+        "authors":[],
+        "tools":{
+            "components":[
+                {
+                    "data":[
+                        {
+                            "name":"CLI configuration flags",
+                            "type":"configuration",
+                            "contents":{
+                                "attachment":{
+                                    "content":"--sbom ./priv/input/sbom.json --test ./priv/input/tests --output sscg.json --authors "
+                                }
+                            }
+                        }
+                    ],
+                    "name":"ReSCALE SSCG Generator",
+                    "type":"application",
+                    "version":"0.1.0",
+                    "description":"A ReSCALE certified tool to generate SSCGs",
+                    "hashes":[
+                        {
+                            "content":"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12",
+                            "alg":"SHA-1"
+                        }
+                    ],
+                    "purl":"pkg:hex/sscg_generator@0.1.0"
+                },
+                {
+                    "data":[
+                        {
+                            "name":"Docker Environment",
+                            "type":"configuration",
+                            "contents":{
+                                "attachment":{
+                                    "content":"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false"
+                                }
+                            }
+                        }
+                    ],
+                    "name":"ReSCALE Static Code Analysis Module",
+                    "type":"container",
+                    "version":"1.0.0",
+                    "description":"A ReSCALE certified container to execute static testing",
+                    "hashes":[
+                        {
+                            "content":"35d1c8f259129dc800ec8e073bb68f995424619c",
+                            "alg":"SHA-1"
+                        }
+                    ],
+                    "purl":"pkg:docker/static_code_analysis_module@1.0.0"
+                }
+            ]
+        }
+    },
+    "bomFormat":"CycloneDX",
+    "declarations":{
+        "targets":{
+            "components":[]
+        },
+        "claims":[
+            {
+                "evidence":[
+                    "Evidence: error: invalid conversion from 'int' to 'char*'."
+                ],
+                "target":"ReSCALE Static Code Analysis Target",
+                "bom-ref":"Claim: Test Suite grisp_test_result_1.txt found something!"
+            },
+            {
+                "evidence":[
+                    "Evidence: Memory error: memory corruption in file main.c at line 23."
+                ],
+                "target":"ReSCALE Static Code Analysis Target",
+                "bom-ref":"Claim: Test Suite grisp_test_result_2.txt found something!"
+            }
+        ],
+        "attestations":[
+            {
+                "map":[
+                    {
+                        "claims":[
+                            "Claim: Test Suite grisp_test_result_1.txt found something!",
+                            "Claim: Test Suite grisp_test_result_2.txt found something!"
+                        ],
+                        "requirement":"https://rescale-project.eu/standard/1.0.0/conformance/complete"
+                    }
+                ],
+                "assessor":"Producer Reference",
+                "summary":"Mapping of Requirements to Claims"
+            }
+        ],
+        "evidence":[
+            {
+                "data":[
+                    {
+                        "contents":{
+                            "attachment":{
+                                "content":"error: invalid conversion from 'int' to 'char*'"
+                            }
+                        }
+                    }
+                ],
+                "description":"TODO - Specify test results output",
+                "bom-ref":"Evidence: error: invalid conversion from 'int' to 'char*'."
+            },
+            {
+                "data":[
+                    {
+                        "contents":{
+                            "attachment":{
+                                "content":"Memory error: memory corruption in file main.c at line 23"
+                            }
+                        }
+                    }
+                ],
+                "description":"TODO - Specify test results output",
+                "bom-ref":"Evidence: Memory error: memory corruption in file main.c at line 23."
+            }
+        ]
+    },
+    "definitions":{
+        "standards":[
+            {
+                "name":"The ReSCALE Standard",
+                "version":"1.0.0",
+                "description":"The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)",
+                "bom-ref":"https://rescale-project.eu/standard/1.0.0",
+                "requirements":[
+                    {
+                        "title":"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings",
+                        "bom-ref":"https://rescale-project.eu/standard/1.0.0/conformance/complete",
+                        "identifier":"/rescale/1.0.0/conformance/complete"
+                    }
+                ]
+            }
+        ]
+    },
+    "serialNumber":"urn:uuid:5edde5b6-0308-463a-861c-3214de6e9929",
+    "specVersion":"1.6"
+}

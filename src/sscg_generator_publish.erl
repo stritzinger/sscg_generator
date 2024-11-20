@@ -58,8 +58,8 @@ publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File}) ->
     Data = #{sscg => SSCGData, sbom => SBOMData},
 
     case sscg_generator_http:post_json(Endpoint, Data) of
-        {ok, Response} -> 
-            sscg_generator_cli:print("Request successfully sent. Response: ~p~n", [Response]);
+        ok -> 
+            sscg_generator_cli:print("Request successfully sent. ~n");
         {error, {encode_error, Reason}} ->
             sscg_generator_cli:abort(
                 "Error: Failed to encode JSON for the request. Data: ~p. Reason: ~p~n", 

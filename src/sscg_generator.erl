@@ -19,20 +19,13 @@
 main(Args) ->
     check_otp_version(?REQUIRED_OTP_VERSION),
     {ok, _} = application:ensure_all_started(sscg_generator),
-    try
-        cli:run(Args, #{
-            progname => ?MODULE,
-            modules => [?MODULE, 
-                        sscg_generator_generate,
-                        sscg_generator_publish],
-            warn => false
-        })
-    catch
-        Class:Reason:Stacktrace ->
-            cli_abort(Class, Reason, Stacktrace)
-    after
-        application:stop(sscg_generator)
-    end.
+    cli:run(Args, #{
+        progname => ?MODULE,
+        modules => [?MODULE,
+                    sscg_generator_generate,
+                    sscg_generator_publish],
+        warn => false
+    }).
 
 % @private
 cli() ->
@@ -73,6 +66,3 @@ check_otp_version(Desired, Actual) when Actual < Desired ->
     ]);
 check_otp_version(_, _) ->
     ok.
-
-cli_abort(Class, Reason, Stacktrace) ->
-    erlang:raise(Class, Reason, Stacktrace).

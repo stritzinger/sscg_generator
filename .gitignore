@@ -15,3 +15,10 @@ deps
 .rebar3
 _build/
 _checkouts/
+
+# Generated files
+sscg.json
+
+# Include the example sscg.json file in /priv/output/ 
+# (demonstrates usage of /priv/input)
+!/priv/output/sscg.json

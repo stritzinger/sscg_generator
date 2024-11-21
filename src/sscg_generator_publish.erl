@@ -4,12 +4,6 @@
 % API
 -export([cli/0, publish/1]).
 
--ifdef(TEST).
--export([group_by/3]).
--endif.
-
-% Includes
--include_lib("kernel/include/logger.hrl").
 
 % @doc Defines the CLI structure for the 'publish' command.
 -spec cli() -> map().

@@ -2,7 +2,6 @@
 
 -export([get_json/1, post_json/2]).
 
--include_lib("kernel/include/logger.hrl").
 
 % @doc
 % Perform an HTTP GET request to a JSON resource and return the decoded JSON.

@@ -23,18 +23,15 @@ all() ->
 
 init_per_testcase(_TestCase, Config) ->
     meck:new(hackney, [passthrough]),
-    meck:new(jsone, [passthrough]),
     Config.
 
 end_per_testcase(_TestCase, Config) ->
     meck:unload(hackney),
-    meck:unload(jsone),
     Config.
 
 %--- Test Cases ----------------------------------------------------------------
 
 successful_request_test(_Config) ->
-    meck:expect(jsone, encode, fun(_Data, _Opts) -> <<"{}">> end),
     meck:expect(hackney, 
                 request, 
                 fun(post, _URL, _Headers, _Payload, _Options) ->
@@ -43,7 +40,6 @@ successful_request_test(_Config) ->
     ?assertEqual(ok, sscg_generator_http:post_json(?MOCK_URL, ?MOCK_JSONDATA)).
 
 unexpected_status_code_test(_Config) ->
-    meck:expect(jsone, encode, fun(_Data, _Opts) -> <<"{}">> end),
     meck:expect(hackney, 
                 request, 
                 fun(post, _URL, _Headers, _Payload, _Options) ->
@@ -53,7 +49,6 @@ unexpected_status_code_test(_Config) ->
                  sscg_generator_http:post_json(?MOCK_URL, ?MOCK_JSONDATA)).
 
 request_failure_test(_Config) ->
-    meck:expect(jsone, encode, fun(_Data, _Opts) -> <<"{}">> end),
     meck:expect(hackney, 
                 request,
                 fun(post, _URL, _Headers, _Payload, _Options) ->

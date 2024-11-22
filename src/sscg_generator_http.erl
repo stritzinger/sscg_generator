@@ -2,8 +2,6 @@
 
 -export([get_json/1, post_json/2]).
 
--include_lib("kernel/include/logger.hrl").
-
 % @doc
 % Perform an HTTP GET request to a JSON resource and return the decoded JSON.
 %
@@ -50,19 +48,18 @@ get_json(URL) ->
 % This function sends a JSON-encoded payload to the provided URL. It handles
 % errors such as request failures and invalid response status codes.
 -spec post_json(URL, JsonData) -> Result
-    when URL      :: binary(),
-         JsonData :: term(),
-         Result   :: ok
-                   | {error, {encode_error,      Reason}}
-                   | {error, {request_failed,    Reason}}
-                   | {error, {unexpected_status, StatusCode}},
-         Reason :: term(),
+    when URL        :: binary(),
+         JsonData   :: map(),
+         Result     :: ok
+                       | {error, {encode_error,      Reason}}
+                       | {error, {request_failed,    Reason}}
+                       | {error, {unexpected_status, StatusCode}},
+         Reason     :: term(),
          StatusCode :: non_neg_integer().
 post_json(URL, JsonData) ->
     Headers = [{<<"Content-Type">>, <<"application/json">>}],
     EncodeOpts = [{indent, 4},
-                  {float_format,
-                  [{scientific, 2}]},
+                  {float_format, [{scientific, 2}]},
                   native_forward_slash,
                   skip_undefined],
     try

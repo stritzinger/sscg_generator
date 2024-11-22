@@ -45,17 +45,26 @@ cli() ->
                                  fun() -> "Endpoint URL where send the files " end},
                         type => binary,
                         required => true
+                    },
+                    #{
+                        name => token,
+                        long => "-token",
+                        short => $t,
+                        help => {"[-t <Token>]",
+                                 fun() -> "Authorization token for the HTTP request" end},
+                        type => binary,
+                        required => true
                     }
                 ]
             }
         }
     }.
 
-publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File}) ->
+publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File, token := Token}) ->
 
     SBOMData = read_json_file(SBOM_File, "SBOM"),
     SSCGData = read_json_file(SSCG_File, "SSCG"),
-    Data = #{sscg => SSCGData, sbom => SBOMData},
+    Data = #{sscg => SSCGData, sbom => SBOMData, token => Token},
 
     case sscg_generator_http:post_json(Endpoint, Data) of
         ok -> 

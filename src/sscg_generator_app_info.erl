@@ -10,6 +10,6 @@ get_app_name() ->
 
 %% @doc
 %% Retrieves the version of the application based on the application name.
--spec get_version() -> {ok, binary()}.
+-spec get_version() -> {ok, string()}.
 get_version() ->
     application:get_key(get_app_name(), vsn).

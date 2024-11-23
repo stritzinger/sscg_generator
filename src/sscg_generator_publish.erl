@@ -4,6 +4,8 @@
 % API
 -export([cli/0, publish/1]).
 
+-type file_path() :: binary() | string().
+
 % @doc Defines the CLI structure for the 'publish' command.
 -spec cli() -> map().
 cli() ->
@@ -77,7 +79,7 @@ publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File, token := T
     end.
 
 % Helper function to read and validate JSON files
--spec read_json_file(binary(), binary()) -> map() | no_return().
+-spec read_json_file(file_path(), string()) -> map() | no_return().
 read_json_file(File, Type) ->
     case sscg_generator_utils:read_json(File) of
         {ok, Data} -> 

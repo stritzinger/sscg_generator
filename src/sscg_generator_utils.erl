@@ -8,7 +8,7 @@
 -export([read_json/1, write_json/2, write_json/3]).
 -export([get_filename_from_path/1]).
 
--type file_path()    :: binary().
+-type file_path()    :: binary() | string().
 -type decoded_json() :: map().
 
 %% @doc Generates the current UTC timestamp in ISO 8601 format 
@@ -33,7 +33,7 @@ uuid() -> uuid:uuid_to_string(uuid:get_v4(), binary_standard).
       when JsonPath :: file_path(),
            Result   :: {ok, decoded_json()} 
                        | {error, invalid_json} 
-                       | {error, {file_not_found, Reason :: term()}}.
+                       | {error, {file_not_available, Reason :: term()}}.
 read_json(JsonPath) ->
     case file:read_file(JsonPath) of
         {ok, Binary} -> 
@@ -50,10 +50,11 @@ read_json(JsonPath) ->
 % @doc Writes the given JSON data to the specified file path.
 -spec write_json(OutputPath, JsonData) -> Result
     when OutputPath    :: file_path(), 
-         JsonData      :: binary(),
+         JsonData      :: jsone:json_value(),
          Result        :: {ok, file_path()} 
                           | {error, {encoding_failed, term()}} 
-                          | {error, {write_failed, term()}}.
+                          | {error, {write_failed, term()}}
+                          | {error, {encode_error, term()}}.
 write_json(OutputPath, JsonData) -> 
     DefaultOptions = [{indent, 4},
                       {float_format, [{scientific, 2}]}, 
@@ -63,11 +64,12 @@ write_json(OutputPath, JsonData) ->
 % @doc Writes the given JSON data to the specified file path.
 -spec write_json(OutputPath, JsonData, EncodeOptions) -> Result
     when OutputPath    :: file_path(), 
-         JsonData      :: binary(),
+         JsonData      :: jsone:json_value(),
          EncodeOptions :: [jsone:encode_option()],
          Result        :: {ok, file_path()} 
                           | {error, {encode_error, term()}} 
-                          | {error, {write_failed, term()}}.
+                          | {error, {write_failed, term()}}
+                          | {error, {encode_error, term()}}.
 write_json(OutputPath, 
            JsonData, 
            EncodeOptions) ->

@@ -9,7 +9,7 @@
 -export([input/1]).
 -export([confirm/1]).
 -export([parse_range/2]).
--export([parse_authors/2]).
+-export([parse_authors/1]).
 -export([serialize_args/3]).
 
 % Callbacks
@@ -76,40 +76,38 @@ parse_range(Range, {DefaultFrom, DefaultTo}) ->
         Else -> Else
     end.
 
--spec parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) -> Result
-    when AuthorsStr   :: binary(),
-         DefaultEmail :: binary(),
-         DefaultName  :: binary(),
-         Result       :: [#{name => binary(), email => binary()}] | error.
-parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) ->
-    AuthorEntries = string:split(AuthorsStr, ",", all),
+-spec parse_authors(Authors) -> Result
+    when Authors :: binary(),
+         Result  :: [#{name => binary(), email => binary()}] | error.
+parse_authors(Authors) ->
+    AuthorEntries = string:split(Authors, ",", all),
+    lists:map(fun parse_author/1, AuthorEntries).
 
-    lists:map(fun(AuthorEntry) ->
-                    case string:split(AuthorEntry, ":", all) of
-                        [Name, Email] when Name =/= [] andalso Email =/= [] ->
-                            #{name  => list_to_binary(string:strip(Name)),
-                              email => list_to_binary(string:strip(Email))};
-                        [Name, []] -> 
-                            #{name  => list_to_binary(string:strip(Name)),
-                              email => DefaultEmail};
-                        [[], Email] -> 
-                            #{name  => DefaultName,
-                              email => list_to_binary(string:strip(Email))};
-                        _ -> 
-                            abort("Failed parsing authors. Reason: ~s. ~n",[invalid_format])
-                    end
-                end, AuthorEntries).
+parse_author(AuthorEntry) ->
+    case string:split(AuthorEntry, ":", all) of
+        [Name, Email] when Name =/= [] andalso Email =/= [] ->
+            #{name  => list_to_binary(string:strip(Name)),
+              email => list_to_binary(string:strip(Email))};
+        [Name, []] -> 
+            #{name  => list_to_binary(string:strip(Name)),
+              email => undefined};
+        [[], Email] -> 
+            #{name  => undefined,
+              email => list_to_binary(string:strip(Email))};
+        _ -> 
+            abort("Failed parsing authors. Reason: ~s. ~n",[invalid_format])
+    end.
 
 % @doc Serializes the Args map back into a command-line string using 
 % the CLI structure.
 -spec serialize_args(Args, CLI, CommandName) -> Result
   when Args        :: map(), 
        CLI         :: map(),
-       CommandName :: binary(),
+       CommandName :: string(),
        Result      :: binary().
 serialize_args(Args, CLI, CommandName) ->
-    Commands = maps:get(commands, CLI),
-    Command = maps:get(CommandName, Commands),
+    Commands  = maps:get(commands, CLI),
+    Command   = maps:get(CommandName, Commands),
     Arguments = maps:get(arguments, Command),
     
     SerializedArgsList = lists:map(
@@ -135,16 +133,29 @@ serialize_arg(ArgName, Args, ArgSpec) ->
         error -> <<"">>  % If the argument is not present, return an empty string
     end.
 
--spec serialize_authors([#{name := binary(), email := binary()}]) -> binary().
+-spec serialize_authors(Authors) -> Result
+    when Authors ::[#{name := binary(), email := binary()}
+                   | #{email := binary()}
+                   | #{name  := binary()}],
+         Result  :: binary().
 serialize_authors(Authors) ->
-    AuthorEntries = lists:map(fun(Author) ->
-                                    Name = maps:get(name, Author),
-                                    Email = maps:get(email, Author),
-                                    NameAndEmail = [binary_to_list(Name), ":", binary_to_list(Email)],
-                                    string:join(NameAndEmail, "")
-                                end, Authors),
+    AuthorEntries = lists:map(fun serialize_author/1, Authors),
     list_to_binary(string:join(AuthorEntries, ",")).
 
+serialize_author(Author) ->
+    Name  = maps:get(name, Author, undefined),
+    Email = maps:get(email, Author, undefined),
+    NameStr = case Name of
+                    undefined -> "";
+                    _ when is_binary(Name) -> binary_to_list(Name);
+                    _ -> Name
+                end,
+    EmailStr = case Email of
+                    undefined -> "";
+                    _ when is_binary(Email) -> binary_to_list(Email);
+                    _ -> Email
+                end,
+    string:join([NameStr, EmailStr], ":").
 %--- Callbacks -----------------------------------------------------------------
 
 format(Event, _Config) ->

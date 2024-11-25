@@ -1,5 +1,5 @@
-% @doc Main application and CLI entry point.
 -module(sscg_generator).
+-moduledoc "Main application and CLI entry point".
 
 -behaviour(application).
 -behaviour(cli).
@@ -7,15 +7,14 @@
 -define(REQUIRED_OTP_VERSION, 26).
 
 % Callbacks
--export([main/1]).
--export([cli/0]).
-
--export([start/2]).
--export([stop/1]).
+-export([main/1, cli/0]).
+-export([start/2, stop/1]).
 
 %--- Callbacks -----------------------------------------------------------------
 
-% @doc Main CLI entry point.
+%--- Callbacks: Application
+-doc "Main CLI entry point".
+-spec main(Args :: [string()]) -> term() | no_return().
 main(Args) ->
     case ensure_minimum_otp_version(?REQUIRED_OTP_VERSION) of
         ok ->
@@ -32,7 +31,8 @@ main(Args) ->
             sscg_generator_cli:abort("Error: Unable to determine OTP version. Info: ~p~n", [Info])
    end.
 
-% @private
+-doc "Defines the CLI structure for the main command".
+-spec cli() -> args:command().
 cli() ->#{arguments => [
               #{name => verbose,
                 long => "-verbose",
@@ -41,16 +41,15 @@ cli() ->#{arguments => [
                 type => boolean,
                 help => "control verbosity level (max -vv)"}]}.
 
-% @doc Application start callback.
-% Starts application and initialize data structures and tables.
+%--- Callbacks: Cli
+-doc "Application start callback".
 start(_Type, _Args) ->
     {ok, self()}.
 
-% @doc Application stop callback.
+-doc "Application stop callback".
 stop(_State) -> ok.
 
 %--- Internal ------------------------------------------------------------------
-
 ensure_minimum_otp_version(RequiredVersion) ->
     Release = erlang:system_info(otp_release),
     try

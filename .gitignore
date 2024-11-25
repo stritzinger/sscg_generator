@@ -17,7 +17,12 @@ _build/
 _checkouts/
 
 # Generated files
+
+## Generated output files
 sscg.json
 
-# Include the /priv/output/sscg_output.json (resulting from processing /priv/input)
+## Include the /priv/output/sscg_output.json (resulting from processing /priv/input)
 !/priv/output/sscg.json
+
+## ex_doc
+doc/

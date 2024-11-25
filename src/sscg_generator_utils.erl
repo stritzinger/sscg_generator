@@ -3,13 +3,22 @@
 %% handling file paths.
 -module(sscg_generator_utils).
 
--export([current_timestamp/0]).
--export([serial_number/0, uuid/0]).
--export([read_json/1, write_json/2, write_json/3]).
--export([get_filename_from_path/1]).
+% API
+-export([current_timestamp/0,
+         serial_number/0,
+         uuid/0]).
 
--type file_path()    :: binary() | string().
--type decoded_json() :: map().
+-export([read_json/1,
+         write_json/2,
+         write_json/3,
+         get_filename_from_path/1]).
+
+% Includes
+-include("sscg_generator.hrl").
+
+%--- API ---------------------------------------------------------------------
+
+%--- API: Types
 
 %% @doc Generates the current UTC timestamp in ISO 8601 format 
 %% (e.g., "2024-09-18T23:45:52Z"). 
@@ -27,6 +36,8 @@ serial_number() ->
     <<"urn:uuid:", UUID/binary>>.
 
 uuid() -> uuid:uuid_to_string(uuid:get_v4(), binary_standard).
+
+%--- API: Files
 
 % @doc Reads the content of a JSON file from the given path.
 -spec read_json(JsonPath) -> Result
@@ -88,7 +99,7 @@ write_json(OutputPath,
 
 %% @doc Extracts the file name from a full file path.
 -spec get_filename_from_path(FilePath) -> FileName 
- when FilePath :: file_path(),
-      FileName :: binary().
+  when FilePath :: file_path(),
+       FileName :: binary().
 get_filename_from_path(FilePath) ->
     filename:basename(FilePath).

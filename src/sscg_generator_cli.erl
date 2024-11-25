@@ -8,7 +8,6 @@
 -export([print/2]).
 -export([input/1]).
 -export([confirm/1]).
--export([parse_range/2]).
 -export([parse_authors/1]).
 -export([serialize_args/3]).
 
@@ -59,26 +58,9 @@ confirm(Prompt) ->
         _     -> false
     end.
 
-parse_range(Range, {DefaultFrom, DefaultTo}) ->
-    {From, To} = case string:split(Range, "..") of
-        [Start, []] ->
-            {parse_date(Start, first), DefaultTo};
-        [[], ToString] ->
-            {DefaultFrom, parse_date(ToString, last)};
-        [Start, ToString] ->
-            {parse_date(Start, first), parse_date(ToString, last)};
-        _ ->
-            error(invalid_argument)
-    end,
-    case {From, To} of
-        {From, To} when From > To -> error(invalid_argument);
-        % {_, To} when To > DefaultTo -> error(invalid_argument);
-        Else -> Else
-    end.
-
 -spec parse_authors(Authors) -> Result
     when Authors :: binary(),
-         Result  :: [#{name => binary(), email => binary()}] | error.
+         Result  :: [#{name => binary(), email => binary()}] | no_return().
 parse_authors(Authors) ->
     AuthorEntries = string:split(Authors, ",", all),
     lists:map(fun parse_author/1, AuthorEntries).
@@ -127,7 +109,9 @@ serialize_arg(ArgName, Args, ArgSpec) ->
                 binary ->
                     io_lib:format("-~s ~s", [LongOpt, binary_to_list(Value)]);
                 {custom, _ParseFun} when ArgName == authors ->
-                    io_lib:format("-~s ~s", [LongOpt, binary_to_list( serialize_authors(Value))]);
+                    io_lib:format("-~s ~s",
+                                  [LongOpt,
+                                   binary_to_list( serialize_authors(Value))]);
                 _ -> <<"">>
             end;
         error -> <<"">>  % If the argument is not present, return an empty string
@@ -182,38 +166,3 @@ format_level(Level) ->
 
 format_level(debug, String) -> color:on_cyan([<<"[">>, String, <<"]">>]);
 format_level(_Level, String) -> String.
-
-%----- Internal functions ------------------------------------------------------
-
-parse_date(String, Preferred) ->
-    Result = re:run(
-        String,
-        "
-            (?<year>\\d{4}) # year
-            (-(?<month>\\d{2}) # optional month
-                (-(?<day>\\d{2}))? # optional day
-            )?",
-        [extended, {capture, all_names, list}]
-    ),
-    case Result of
-        {match, Match} ->
-            ToInteger = fun([]) -> undefined; (S) -> list_to_integer(S) end,
-            fix_date(lists:map(ToInteger, Match), Preferred);
-        nomatch ->
-            error(invalid_argument)
-    end.
-
-fix_date([undefined, undefined, Year], first) ->
-    {Year, 1, 1};
-fix_date([undefined, undefined, Year], last) ->
-    {Year, 12, 31};
-fix_date([undefined, Month, Year], last) ->
-    {Year, Month, calendar:last_day_of_the_month(Year, Month)};
-fix_date([undefined, Month, Year], first) ->
-    {Year, Month, 1};
-fix_date([Day, Month, Year], _Preferred) ->
-    Date = {Year, Month, Day},
-    case calendar:valid_date(Date) of
-        true -> Date;
-        false -> error(invalid_argument)
-    end.

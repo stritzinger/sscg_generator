@@ -4,7 +4,8 @@
 % API
 -export([cli/0, publish/1]).
 
--type file_path() :: binary() | string().
+% Include
+-include("sscg_generator.hrl").
 
 % @doc Defines the CLI structure for the 'publish' command.
 -spec cli() -> map().

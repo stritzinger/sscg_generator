@@ -1,5 +1,5 @@
-% @doc Helper functions for CLI.
 -module(sscg_generator_cli).
+-moduledoc "This module provides helper functions for CLI".
 
 % API
 -export([init/1]).
@@ -19,7 +19,7 @@
 -define(YES, "^[Yy]([Ee][Ss])?$").
 
 %--- API -----------------------------------------------------------------------
-
+-doc "Init client (e.g., adjusts log verbosity based on input arguments)".
 init(Args) ->
     set_log_level(Args),
     ?LOG_DEBUG("ARGS: ~p", [Args]),
@@ -32,14 +32,22 @@ set_log_level(#{verbose := 1}) ->
 set_log_level(#{}) ->
     ok.
 
+-doc "Aborts the program with a red formatted error message".
+-spec abort(Format :: string(), Args :: list()) -> Result :: no_return().
 abort(Format, Args) ->
     io:format("~s~n", [color:red(io_lib:format(Format, Args))]),
     erlang:halt(1).
 
+-doc #{equiv => print(Text, [])}.
 print(Text) -> print(Text, []).
+
+-doc "Prints a formatted message to the console".
+-spec print(string(), [term()]) -> ok.
 print(Format, Args) ->
     io:format(Format ++ "~n", Args).
 
+-doc "Prompts the user for input".
+-spec input(string()) -> binary().
 input(Prompt) ->
     case io:get_line(Prompt ++ " ") of
         eof ->
@@ -47,17 +55,28 @@ input(Prompt) ->
         {error, Reason} ->
             abort("Error reading input: ~p", [Reason]);
         Data ->
-            re:replace(Data, "^[[:space:]]*+|[[:space:]]*+$", <<>>,
-                [global, {return, binary}]
-            )
+            re:replace(Data,
+                       "^[[:space:]]*+|[[:space:]]*+$",
+                       <<>>,
+                       [global, {return, binary}])
     end.
 
+-doc "Prompts a yes/no-question and returns a boolean based on the response".
+-spec confirm(string()) -> boolean().
 confirm(Prompt) ->
     case re:run(input(Prompt), ?YES, [{capture, none}]) of
         match -> true;
         _     -> false
     end.
 
+-doc """
+Parses a binary containing a comma-separated list of authors into a list of maps.
+Each author entry should be in the format "<name>:<email>". Entries with missing
+ name or email are also supported:
+- "<name>:" will result in a map with `name` set and `email` as `undefined`.
+- ":<email>" will result in a map with `email` set and `name` as `undefined`.
+If the format is invalid, the function will abort with an error.
+""".
 -spec parse_authors(Authors) -> Result
     when Authors :: binary(),
          Result  :: [#{name => binary(), email => binary()}] | no_return().
@@ -80,15 +99,16 @@ parse_author(AuthorEntry) ->
             abort("Failed parsing authors. Reason: ~s. ~n",[invalid_format])
     end.
 
-% @doc Serializes the Args map back into a command-line string using 
-% the CLI structure.
--spec serialize_args(Args, CLI, CommandName) -> Result
-  when Args        :: map(), 
-       CLI         :: map(),
-       CommandName :: string(),
-       Result      :: binary().
-serialize_args(Args, CLI, CommandName) ->
-    Commands  = maps:get(commands, CLI),
+-doc """
+Serializes the arguments map into a command-line binary using the Cli structure.
+""".
+-spec serialize_args(Args, Cli, CommandName) -> Result
+    when Args        :: map(), 
+         Cli         :: args:command(),
+         CommandName :: string(),
+         Result      :: binary().
+serialize_args(Args, Cli, CommandName) ->
+    Commands  = maps:get(commands, Cli),
     Command   = maps:get(CommandName, Commands),
     Arguments = maps:get(arguments, Command),
     
@@ -100,7 +120,6 @@ serialize_args(Args, CLI, CommandName) ->
         Arguments),
     list_to_binary(string:join(SerializedArgsList, " ")).
 
--spec serialize_arg(atom(), map(), map()) -> binary().
 serialize_arg(ArgName, Args, ArgSpec) ->
     case maps:find(ArgName, Args) of
         {ok, Value} ->
@@ -140,8 +159,8 @@ serialize_author(Author) ->
                     _ -> Email
                 end,
     string:join([NameStr, EmailStr], ":").
-%--- Callbacks -----------------------------------------------------------------
 
+%--- Callbacks -----------------------------------------------------------------
 format(Event, _Config) ->
     #{
         level := Level,

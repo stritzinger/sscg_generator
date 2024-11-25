@@ -1,12 +1,12 @@
-%% @doc Helper functions for the SSCG generator escript, including utilities for
-%% working with timestamps, UUIDs, reading and writing JSON files, and
-%% handling file paths.
 -module(sscg_generator_utils).
+-moduledoc """
+Helper functions for the SSCG generator escript, including utilities for working
+ with timestamps, UUIDs, reading and writing JSON files, and handling file paths.
+""".
 
 % API
 -export([current_timestamp/0,
-         serial_number/0,
-         uuid/0]).
+         serial_number/0]).
 
 -export([read_json/1,
          write_json/2,
@@ -21,8 +21,10 @@
 
 %--- API: Types
 
-%% @doc Generates the current UTC timestamp in ISO 8601 format 
-%% (e.g., "2024-09-18T23:45:52Z"). 
+-doc """
+Generates the current UTC timestamp in ISO 8601 format 
+(e.g., \"2024-09-18T23:45:52Z\")
+""".
 -spec current_timestamp() -> binary().
 current_timestamp() ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:universal_time(),
@@ -30,17 +32,15 @@ current_timestamp() ->
                              [Year, Month, Day, "T", Hour, Minute, Second]),
     iolist_to_binary(Timestamp).
 
-%% @doc Generates a unique serial number based on a UUID.
+-doc "Generates a unique serial number based on a UUID".
 -spec serial_number() -> binary().
 serial_number() ->
-    UUID = uuid(),
+    UUID = uuid:uuid_to_string(uuid:get_v4(), binary_standard),
     <<"urn:uuid:", UUID/binary>>.
-
-uuid() -> uuid:uuid_to_string(uuid:get_v4(), binary_standard).
 
 %--- API: Files
 
-% @doc Reads the content of a JSON file from the given path.
+-doc "Reads the content of a JSON file from the given path".
 -spec read_json(JsonPath) -> Result
     when JsonPath :: file_path(),
          Result   :: {ok, decoded_json()} 
@@ -59,7 +59,7 @@ read_json(JsonPath) ->
             {error, {file_not_available, Reason}}
     end.
 
-% @doc Writes the given JSON data to the specified file path.
+-doc "Writes the given JSON data to the specified file path".
 -spec write_json(OutputPath, JsonData) -> Result
     when OutputPath    :: file_path(), 
          JsonData      :: jsone:json_value(),
@@ -73,7 +73,7 @@ write_json(OutputPath, JsonData) ->
                       skip_undefined, native_forward_slash],
     write_json(OutputPath, JsonData, DefaultOptions).
 
-% @doc Writes the given JSON data to the specified file path.
+-doc "Writes the given JSON data to the specified file path".
 -spec write_json(OutputPath, JsonData, EncodeOptions) -> Result
     when OutputPath    :: file_path(), 
          JsonData      :: jsone:json_value(),
@@ -98,13 +98,14 @@ write_json(OutputPath,
             {error, {encode_error, EncodingReason}}
     end.
 
-%% @doc Extracts the file name from a full file path.
+-doc "Extracts the file name from a full file path".
 -spec get_filename_from_path(FilePath) -> FileName 
     when FilePath :: file_path(),
          FileName :: binary().
 get_filename_from_path(FilePath) ->
     filename:basename(FilePath).
 
+-doc "Processes a file by reading its content and extracting its file name".
 -spec process_file(FilePath) -> Result
     when FilePath :: file_path(),
          Result   :: {ok, {FileName :: binary(), Content :: binary()}} 

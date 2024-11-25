@@ -11,7 +11,8 @@
 -export([read_json/1,
          write_json/2,
          write_json/3,
-         get_filename_from_path/1]).
+         get_filename_from_path/1,
+         process_file/1]).
 
 % Includes
 -include("sscg_generator.hrl").
@@ -41,10 +42,10 @@ uuid() -> uuid:uuid_to_string(uuid:get_v4(), binary_standard).
 
 % @doc Reads the content of a JSON file from the given path.
 -spec read_json(JsonPath) -> Result
-      when JsonPath :: file_path(),
-           Result   :: {ok, decoded_json()} 
-                       | {error, invalid_json} 
-                       | {error, {file_not_available, Reason :: term()}}.
+    when JsonPath :: file_path(),
+         Result   :: {ok, decoded_json()} 
+                     | {error, invalid_json} 
+                     | {error, {file_not_available, Reason :: term()}}.
 read_json(JsonPath) ->
     case file:read_file(JsonPath) of
         {ok, Binary} -> 
@@ -99,7 +100,18 @@ write_json(OutputPath,
 
 %% @doc Extracts the file name from a full file path.
 -spec get_filename_from_path(FilePath) -> FileName 
-  when FilePath :: file_path(),
-       FileName :: binary().
+    when FilePath :: file_path(),
+         FileName :: binary().
 get_filename_from_path(FilePath) ->
     filename:basename(FilePath).
+
+-spec process_file(FilePath) -> Result
+    when FilePath :: file_path(),
+         Result   :: {ok, {FileName :: binary(), Content :: binary()}} 
+                     | {error, Reason :: term()}.
+process_file(FilePath) ->
+    FileName = sscg_generator_utils:get_filename_from_path(FilePath),
+    case file:read_file(FilePath) of
+        {ok, Content}   -> {ok, {FileName, Content}};
+        {error, Reason} -> {error, Reason}
+    end.

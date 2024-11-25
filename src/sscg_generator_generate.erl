@@ -80,10 +80,9 @@ generate(#{sbom    := SBOMFile,
                 lists:map(
                     fun(File) ->
                         FilePath = filename:join(TestFolder, File),
-                        FileName = sscg_generator_utils:get_filename_from_path(FilePath),
-                        case file:read_file(FilePath) of
-                            {ok, Content} ->
-                                {FileName, Content};
+                        case sscg_generator_utils:process_file(FilePath) of
+                            {ok, {_Name, _Content} = Result} ->
+                                Result;
                             {error, Reason} ->
                                 sscg_generator_cli:abort("Failed to read file ~s: ~p~n", [FilePath, Reason])
                         end

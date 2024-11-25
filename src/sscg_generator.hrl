@@ -1,5 +1,5 @@
 %--- SSCG ----------------------------------------------------------------------
-
+-doc "A map representing the Software Supply Chain Graph (SSCG) structure".
 -type sscg() ::
     #{bomFormat    => binary(),
       specVersion  => version(),
@@ -28,6 +28,11 @@
                         evidence     => [evidence()]}
     }.
 
+-doc """
+A map representing a component from the static code analysis module within the 
+SSCG or a target component from the SBOM, representing a component of the 
+tested software.
+""".
 -type component() :: #{bom_ref     => bom_ref(),
                        type        => binary(), % application, container, library or others.
                        name        => binary(),
@@ -37,10 +42,18 @@
                        data        => [data()],
                        hashes      => [#{alg => binary(), content => binary()}]}.
 
+-doc """
+A map representing a claim generated from tests that detected an anomaly or
+irregularity.
+""".
 -type claim() :: #{'bom-ref' => bom_ref(),
                    target    => undefined,
                    evidence  => [bom_ref()]}.
 
+-doc """
+Represents the evidence supporting a claim, containing the test content that 
+substantiates it.
+""".
 -type evidence() :: #{'bom-ref'   => bom_ref(),
                       description => binary(),
                       data        => [data]
@@ -64,6 +77,7 @@
 -type folder_path()  :: binary() | string().
 
 %--- Others --------------------------------------------------------------------
+-type url()           :: binary().
 -type version()       :: <<_ : _*8>>. % A version-like format, i.e., "1.0", "2.0"
 -type timestamp()     :: binary().
 -type serial_number() :: binary().

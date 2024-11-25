@@ -1,5 +1,5 @@
-% @doc Task to publish the SSCG .json and the SBOM in an URL.
 -module(sscg_generator_publish).
+-moduledoc "Task to publish the SSCG and the SBOM .json files in an URL".
 
 % API
 -export([cli/0, publish/1]).
@@ -7,55 +7,60 @@
 % Include
 -include("sscg_generator.hrl").
 
-% @doc Defines the CLI structure for the 'publish' command.
--spec cli() -> map().
+%--- API -----------------------------------------------------------------------
+-doc "Defines the CLI structure for the `publish` command".
+-spec cli() -> args:command().
 cli() ->
-    #{
-        commands => #{
-            "publish" => #{
-                help => "Send the SSCG and the input SBOM to a URL",
-                arguments => [
-                    #{
-                        name => sbom,
-                        long => "-sbom",
-                        short => $s,
-                        help => {"[-s <SBOM_file>]", 
-                                 fun() -> "SBOM JSON file path" end},
-                        type => binary,
-                        required => true
-                    },
-                    #{
-                        name => sscg,
-                        long => "-sscg",
-                        short => $g,
-                        help => {"[-g <SSCG_file>]", 
-                                 fun() -> "SSCG file path" end},
-                        type => binary,
-                        required => true
-                    },
-                    #{
-                        name => endpoint,
-                        long => "-endpoint",
-                        short => $e,
-                        help => {"[-e <URL>]", 
-                                 fun() -> "Endpoint URL where send the files " end},
-                        type => binary,
-                        required => true
-                    },
-                    #{
-                        name => token,
-                        long => "-token",
-                        short => $t,
-                        help => {"[-t <Token>]",
-                                 fun() -> "Authorization token for the HTTP request" end},
-                        type => binary,
-                        required => true
-                    }
-                ]
-            }
+    #{commands =>
+        #{"publish" =>
+            #{help => "Send the SSCG and the input SBOM to a URL",
+              arguments => [argument(sbom),
+                            argument(sscg),
+                            argument(endpoint),
+                            argument(token)]}
         }
     }.
 
+argument(sbom) ->
+    #{name     => sbom,
+      long     => "-sbom",
+      short    => $s,
+      help     => {"[-s <SBOM_file>]", 
+                   fun() -> "SBOM JSON file path" end},
+      type     => binary,
+      required => true};
+argument(sscg) ->
+    #{name     => sscg,
+      long     => "-sscg",
+      short    => $g,
+      help     => {"[-g <SSCG_file>]", 
+                   fun() -> "SSCG file path" end},
+      type     => binary,
+      required => true};
+argument(endpoint) ->
+    #{name     => endpoint,
+      long     => "-endpoint",
+      short    => $e,
+      help     => {"[-e <URL>]", 
+                   fun() -> "Endpoint URL where send the files " end},
+      type     => binary,
+      required => true};
+argument(token) ->
+    #{name     => token,
+      long     => "-token",
+      short    => $t,
+      help     => {"[-t <Token>]",
+                   fun() -> "Authorization token for the HTTP request" end},
+      type     => binary,
+      required => true}.
+
+-doc "Publish the SSCG and the SBOM .json files in an URL".
+-spec publish(Args) -> Result
+when Args :: #{endpoint := binary(),
+               sbom     := file_path(),
+               sscg     := file_path(),
+               token    := binary()},
+    Result :: ok | no_return().
 publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File, token := Token}) ->
 
     SBOMData = read_json_file(SBOM_File, "SBOM"),

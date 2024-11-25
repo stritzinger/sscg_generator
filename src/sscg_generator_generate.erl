@@ -1,8 +1,11 @@
-% @doc Task to generate a .json from a SBOM and metadata.
 -module(sscg_generator_generate).
+-moduledoc """
+This module provides a task to generate a `.json` file from an SBOM and test files.
 
+It also includes metadata about the tool and authors' information in the generated file.
+""".
 % API
--export([cli/0, generate/1]).
+-export([cli/0, generate/1, generate_sscg/1]).
 
 % Include
 -include("sscg_generator.hrl").
@@ -11,46 +14,42 @@
 -define(CYCLONEDX_BASE_URL, "http://cyclonedx.org/schema/").
 
 %--- API -----------------------------------------------------------------------
-
-% @doc Defines the CLI structure for the 'generate' command.
--spec cli() -> map().
-cli() ->
+-doc "Defines the CLI structure for the `generate` command".
+-spec cli() -> args:command().
+cli() ->  
     #{commands =>
         #{"generate" =>
             #{help      => "Generate a SSCG using a SBOM and metadata files",
-              arguments => [sbom_argument(),
-                            test_argument(),
-                            output_argument(),
-                            authors_argument()]}
+              arguments => [argument(sbom),
+                            argument(test),
+                            argument(output),
+                            argument(authors)]}
         }
     }.
 
-sbom_argument() ->
+argument(sbom) ->
     #{name     => sbom,
       long     => "-sbom",
       short    => $s,
       help     => {"[-s <SBOM_file>]", fun() -> "SBOM JSON file path" end},
       type     => binary,
-      required => true}.
-
-test_argument() ->
+      required => true};
+argument(test) ->
     #{name     => test,
       long     => "-test",
       short    => $t,
       help     => {"[-t <test_folder>]", fun() -> "Test folder path" end},
       type     => binary,
-      required => true}.
-
-output_argument() ->
+      required => true};
+argument(output) ->
     #{name     => output,
       long     => "-output",
       short    => $o,
       help     => {"[-p <output_path>]", fun() -> "Output file path and name" end},
       type     => binary,
       default  => <<"sscg.json">>,
-      required => false}.
-
-authors_argument() ->
+      required => false};
+argument(authors) ->
     ParseAuthors = 
         fun (Authors) -> sscg_generator_cli:parse_authors(Authors) end,
 
@@ -63,17 +62,19 @@ authors_argument() ->
       default  => [],
       required => false}.
 
-% @doc The main task to generate a JSON SSCG from a SBOM file and metadata.
+-doc "Generates a `.json` SSCG from a SBOM file".
 -spec generate(Args) -> Result
-  when Args :: #{sbom    := file_path(),
-                 test    := folder_path(),
-                 output  := file_path(),
-                 authors := [#{name := binary(), email := binary}]},
-       Result :: ok | no_return().
+    when Args :: #{sbom    := file_path(),
+                   test    := folder_path(),
+                   output  := file_path(),
+                   authors := [#{name := binary(), email := binary}]},
+         Result :: ok | no_return().
 generate(#{sbom    := SBOMFile,
            test    := TestFolder,
            output  := OutputPath,
            authors := Authors} = Args) ->
+    sscg_generator_cli:init(Args),
+
     Tests =
         case file:list_dir(TestFolder) of
             {ok, Files} ->
@@ -142,15 +143,14 @@ generate(#{sbom    := SBOMFile,
 
 %--- Internal Functions --------------------------------------------------------
 
-%% @doc
 %% Generates an SSCG (Static Software Supply Chain Guarantee) map in a CycloneDX
 %% format using provided information. 
 -spec generate_sscg(Args) -> Result
- when Args   :: #{spec_version  := version(),
-                  authors       := [binary()],
-                  targets       := [component()],
-                  tests         := [{Name :: binary(), Content :: binary()}],
-                  configuration := binary()},
+    when Args   :: #{spec_version  := version(),
+                     authors       := [binary()],
+                     targets       := [component()],
+                     tests         := [{Name :: binary(), Content :: binary()}],
+                     configuration := binary()},
       Result :: sscg().
 generate_sscg(
     #{spec_version  := SpecVersion,
@@ -208,7 +208,6 @@ generate_sscg(
             }
     }.
 
-% @doc 
 % Validates whether the given JSON data represents a valid SBOM (Software Bill 
 % of Materials). A valid SBOM must meet the following criteria:
 % - It must contain the `"specVersion"` field, which specifies the version of the SBOM.
@@ -235,7 +234,7 @@ is_valid_sbom(JsonData) ->
             false
     end.
 
-% @doc Retrieves the CycloneDX schema for the given specification version.
+% Retrieves the CycloneDX schema for the given specification version.
 -spec get_schema(SpecVersion) -> Result
     when SpecVersion :: version(),
          Result      :: {ok, decoded_json()} 

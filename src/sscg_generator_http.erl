@@ -43,7 +43,7 @@ get_json(URL) ->
     end.
 
 % @doc
-% Perform an HTTP POST request with a JSON payload and return the decoded JSON response.
+% Perform an HTTP POST request with a JSON payload and return the response.
 %
 % This function sends a JSON-encoded payload to the provided URL. It handles
 % errors such as request failures and invalid response status codes.

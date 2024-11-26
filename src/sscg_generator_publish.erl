@@ -4,13 +4,6 @@
 % API
 -export([cli/0, publish/1]).
 
--ifdef(TEST).
--export([group_by/3]).
--endif.
-
-% Includes
--include_lib("kernel/include/logger.hrl").
-
 % @doc Defines the CLI structure for the 'publish' command.
 -spec cli() -> map().
 cli() ->
@@ -80,15 +73,7 @@ publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File, token := T
         {error, {unexpected_status, StatusCode}} ->
             sscg_generator_cli:abort(
                 "Error: Unexpected HTTP status code ~p received from endpoint '~s'.~n", 
-                [StatusCode, Endpoint]);
-        {error, {body_read_error, Reason}} ->
-            sscg_generator_cli:abort(
-                "Error: Failed to read the response body from endpoint '~s'. Reason: ~p~n", 
-                [Endpoint, Reason]);
-        {error, {invalid_json, Reason}} ->
-            sscg_generator_cli:abort(
-                "Error: The response from endpoint '~s' contains invalid JSON. Reason: ~p~n", 
-                [Endpoint, Reason])
+                [StatusCode, Endpoint])
     end.
 
 % Helper function to read and validate JSON files

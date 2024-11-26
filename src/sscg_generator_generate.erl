@@ -4,10 +4,6 @@
 % API
 -export([cli/0, generate/1]).
 
--ifdef(TEST).
--export([group_by/3]).
--endif.
-
 % CycloneDX endpoint
 -define(CYCLONEDX_BASE_URL, "http://cyclonedx.org/schema/").
 

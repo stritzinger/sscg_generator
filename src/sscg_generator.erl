@@ -4,7 +4,7 @@
 -behaviour(application).
 -behaviour(cli).
 
--define(REQUIRED_OTP_VERSION, 26).
+-define(REQUIRED_MIN_OTP_VERSION, 26).
 
 % Callbacks
 -export([main/1]).
@@ -17,7 +17,7 @@
 
 % @doc Main CLI entry point.
 main(Args) ->
-    check_otp_version(?REQUIRED_OTP_VERSION),
+    check_otp_version(?REQUIRED_MIN_OTP_VERSION),
     {ok, _} = application:ensure_all_started(sscg_generator),
     cli:run(Args, #{
         progname => ?MODULE,

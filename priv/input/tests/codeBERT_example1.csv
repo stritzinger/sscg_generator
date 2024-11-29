@@ -1,0 +1,78 @@
+Function Name,Start Line,End Line,Function Body,Logits,Vulnerable
+clock_get_ticks_per_second,37,37,"clock_get_ticks_per_second() -> erlang:nif_error(""NIF library not loaded"").
+","[[0.8990782499313354, -0.8187983632087708]]",0
+clock_get_ticks_since_boot,44,44,"clock_get_ticks_since_boot() -> erlang:nif_error(""NIF library not loaded"").
+","[[0.12367408722639084, -0.14976029098033905]]",0
+clock_get_tod,50,52,"clock_get_tod() ->
+    {Year, Month, Day, Hour, Minute, Second, Ticks} = clock_get_tod_nif(),
+    {{{Year, Month, Day}, {Hour, Minute, Second}}, Ticks}.
+","[[-1.9504896402359009, 1.441964030265808]]",1
+clock_set,58,59,"clock_set({{{Year, Month, Day}, {Hour, Minute, Second}}, Ticks}) ->
+    clock_set_nif({Year, Month, Day, Hour, Minute, Second, Ticks}).
+","[[-2.241990089416504, 1.6826202869415283]]",1
+unmount,65,66,"unmount(Path) ->
+    unmount_nif([Path, 0]).
+","[[-1.039533257484436, 0.9076350927352905]]",1
+write_file_to_device,71,72,"write_file_to_device(FilePath, DevicePath) ->
+    write_file_to_device(FilePath, DevicePath, ?DEFAULT_READ_CHUNK_SIZE, ?DEFAULT_WRITE_CHUNK_SIZE).
+","[[-2.4425933361053467, 2.161400318145752]]",1
+write_file_to_device,77,87,"write_file_to_device(FilePath, DevicePath, ReadChunkSize, WriteChunkSize) ->
+    case file:open(FilePath, [read, binary, compressed]) of
+        {ok, Fd} ->
+            try
+                read_write_loop(Fd, DevicePath, ReadChunkSize, WriteChunkSize, 0)
+            after
+                file:close(Fd)
+            end;
+        Error ->
+            Error
+    end.
+","[[-3.403930187225342, 3.0430030822753906]]",1
+pwrite,99,100,"pwrite(DevicePath, Buffer, Offset) ->
+    pwrite_nif([DevicePath, 0], [Buffer], Offset).
+","[[-1.9572017192840576, 1.7669613361358643]]",1
+on_load,105,105,"on_load() -> ?NIF_LOAD.
+","[[-0.27909189462661743, 0.18086901307106018]]",1
+clock_set_nif,109,109,"clock_set_nif(TimeOfDay) -> ?NIF_STUB([TimeOfDay]).
+","[[2.0004584789276123, -1.930538296699524]]",0
+clock_get_tod_nif,111,111,"clock_get_tod_nif() -> ?NIF_STUB([]).
+","[[2.0797019004821777, -1.8404157161712646]]",0
+unmount_nif,113,113,"unmount_nif(Path) -> ?NIF_STUB([Path]).
+","[[-1.5401380062103271, 1.275950312614441]]",1
+pwrite_nif,115,116,"pwrite_nif(DevicePath, Buffer, Offset) ->
+    ?NIF_STUB([DevicePath, Buffer, Offset]).
+","[[1.186440348625183, -1.025733470916748]]",0
+read_write_loop,118,131,"read_write_loop(Fd, DevicePath, ReadChunkSize, WriteChunkSize, BytesReadTotal) ->
+    case file:read(Fd, ReadChunkSize) of
+        {ok, ReadChunk} ->
+            case write_loop(DevicePath, ReadChunk, WriteChunkSize, BytesReadTotal, 0) of
+                {ok, ChunkBytesWritten} ->
+                    read_write_loop(Fd, DevicePath, ReadChunkSize, WriteChunkSize, BytesReadTotal + ChunkBytesWritten);
+                Error ->
+                    {error, BytesReadTotal, Error}
+            end;
+        eof ->
+            {ok, BytesReadTotal};
+        Error ->
+            {error, BytesReadTotal, Error}
+    end.
+","[[-3.4152121543884277, 2.9720458984375]]",1
+write_loop,133,150,"write_loop(DevicePath, Chunk, WriteChunkSize, Offset, ChunkBytesWritten) ->
+    case byte_size(Chunk) =< WriteChunkSize of
+        true ->
+            case pwrite(DevicePath, Chunk, Offset) of
+                {ok, BytesWritten} ->
+                    {ok, ChunkBytesWritten + BytesWritten};
+                Error ->
+                    Error
+            end;
+        false ->
+            <<WriteChunk:WriteChunkSize/binary, ChunkRest/binary>> = Chunk,
+            case pwrite(DevicePath, WriteChunk, Offset) of
+                {ok, BytesWritten} ->
+                    write_loop(DevicePath, ChunkRest, WriteChunkSize, Offset + BytesWritten, ChunkBytesWritten + BytesWritten);
+                Error ->
+                    Error
+            end
+    end.
+","[[-3.2358198165893555, 2.79111909866333]]",1

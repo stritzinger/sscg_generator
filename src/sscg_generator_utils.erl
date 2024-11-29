@@ -3,14 +3,19 @@
 %% handling file paths.
 -module(sscg_generator_utils).
 
--export([current_timestamp/0]).
--export([serial_number/0, uuid/0]).
+% API
+-export([current_timestamp/0, serial_number/0, uuid/0]).
 -export([read_json/1, write_json/2, write_json/3]).
--export([get_filename_from_path/1]).
+-export([get_filename_from_path/1,
+         get_file_format/1]).
 
+%--- Types ---------------------------------------------------------------------
 -type file_path()    :: binary().
 -type decoded_json() :: map().
 
+%--- API -----------------------------------------------------------------------
+ 
+%---  API: Type related funtions
 %% @doc Generates the current UTC timestamp in ISO 8601 format 
 %% (e.g., "2024-09-18T23:45:52Z"). 
 -spec current_timestamp() -> binary().
@@ -28,6 +33,7 @@ serial_number() ->
 
 uuid() -> uuid:uuid_to_string(uuid:get_v4(), binary_standard).
 
+%-- API: JSON related functions
 % @doc Reads the content of a JSON file from the given path.
 -spec read_json(JsonPath) -> Result
       when JsonPath :: file_path(),
@@ -84,9 +90,22 @@ write_json(OutputPath,
             {error, {encode_error, EncodingReason}}
     end.
 
+%--- API: Read and process files related functions
+
 %% @doc Extracts the file name from a full file path.
 -spec get_filename_from_path(FilePath) -> FileName 
- when FilePath :: file_path(),
-      FileName :: binary().
+    when FilePath :: file_path(),
+         FileName :: binary().
 get_filename_from_path(FilePath) ->
     filename:basename(FilePath).
+
+%% @doc Extracts the file extension.
+-spec get_file_format(FileName :: binary()) -> Result  :: atom().
+get_file_format(FileName) ->
+    Extension = filename:extension(FileName),
+    case Extension of
+        <<".", Rest/binary>> -> binary_to_atom(Rest, utf8);
+        _ -> unknown  % Return `unknown` if no valid extension is found
+    end.
+
+%--- API: Others

@@ -1,1 +1,0 @@
-error: invalid conversion from 'int' to 'char*'

@@ -127,6 +127,29 @@ generate(#{
            [Component];
         _ -> []
     end,
+    SBOMHash = case os:cmd("which json-canonicalization") of
+                   [] ->
+                       %% if the canonicalizer from the static code
+                       %% analysis module is not available, then
+                       %% just hash the parsed JSON data
+                       string:lowercase([io_lib:format("~2.16.0B",[X])
+                                         || <<X:8>> <= crypto:hash(sha, jsone:encode(SBOMData))]);
+                   _ ->
+                       %% note: file is already checked when SBOM is parsed
+                       os:cmd("json-canonicalization hash " ++ binary_to_list(SBOMFile))
+               end,
+    SBOMSerial    = case maps:get(<<"serialNumber">>, SBOMData, undefined) of
+                        undefined ->
+                            sscg_generator_cli:abort("Error: serial number missing in SBOM. ~n", []);
+                        Serial ->
+                            Serial
+                    end,
+    SBOMVersion   = case maps:get(<<"version">>, SBOMData, undefined) of
+                        undefined ->
+                            sscg_generator_cli:abort("Error: version missing in SBOM. ~n", []);
+                        Version ->
+                            Version
+                    end,
     CommandName   = atom_to_list(?FUNCTION_NAME),
     Configuration = sscg_generator_cli:serialize_args(Args, cli(), CommandName),
 
@@ -134,6 +157,9 @@ generate(#{
         #{spec_version  => SpecVersion, 
           authors       => Authors, 
           targets       => Targets,
+          sbom_hash     => SBOMHash,
+          sbom_serial   => SBOMSerial,
+          sbom_version  => SBOMVersion,
           tests         => Tests,
           configuration => Configuration
         }),
@@ -162,13 +188,19 @@ generate(#{
 -spec generate_sscg(Map) -> Result
  when Map :: #{spec_version := binary(), 
                authors      := [binary()],
-               targets       := [map()],
+               targets      := [map()],
+               sbom_hash    := binary(),
+               sbom_serial  := binary(),
+               sbom_version := integer(),
                tests        := [{ Name :: binary(), Content :: binary()}]},
       Result :: map().
 generate_sscg(
     #{spec_version  := SpecVersion, 
       authors       := Authors,
-      targets       := Targets ,
+      targets       := Targets,
+      sbom_hash     := SBOMHash,
+      sbom_serial   := SBOMSerial,
+      sbom_version  := SBOMVersion,
       tests         := Tests,
       configuration := Configuration
     }) ->
@@ -181,6 +213,8 @@ generate_sscg(
     ReSCALEStandardConformanceURL= <<ReSCALEStandardURL/binary, "/conformance/complete">>,
 
     Claims = [{to_claim(Name), Content} || {Name, Content} <- Tests],
+
+    [_, TrimmedSBOMSerial] = string:split(SBOMSerial, "urn:uuid:"),
 
     #{
         bomFormat    => <<"CycloneDX">>,
@@ -198,6 +232,17 @@ generate_sscg(
                     ]
                 }
         },
+        externalReferences => [
+            #{
+                comment => <<"RESCALE SBOM">>,
+                type    => <<"bom">>,
+                url     => <<"urn:cdx:",
+                             TrimmedSBOMSerial/binary,
+                             "/",
+                             (integer_to_binary(SBOMVersion))/binary>>,
+                hashes  => [#{alg => <<"SHA-1">>, content => list_to_binary(SBOMHash)}]
+             }
+        ],
         definitions  => #{
             standards => [
               #{

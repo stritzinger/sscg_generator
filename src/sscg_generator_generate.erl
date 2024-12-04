@@ -5,7 +5,7 @@ This module provides a task to generate a `.json` file from an SBOM and test fil
 It also includes metadata about the tool and authors' information in the generated file.
 """.
 % API
--export([cli/0, generate/1, generate_sscg/1]).
+-export([command_info/0, generate/1, generate_sscg/1]).
 
 % Include
 -include("sscg_generator.hrl").
@@ -14,18 +14,18 @@ It also includes metadata about the tool and authors' information in the generat
 -define(CYCLONEDX_BASE_URL, "http://cyclonedx.org/schema/").
 
 %--- API -----------------------------------------------------------------------
--doc "Defines the CLI structure for the `generate` command".
--spec cli() -> args:command().
-cli() ->  
-    #{commands =>
-        #{"generate" =>
-            #{help      => "Generate a SSCG using a SBOM and metadata files",
-              arguments => [argument(sbom),
-                            argument(test),
-                            argument(output),
-                            argument(authors)]}
-        }
-    }.
+-doc "Defines the name and CLI structure for the `generate` command".
+-spec command_info() -> #{Name :: string() => Cli :: argparse:command()}.
+command_info() ->
+    #{"generate" => cli()}.
+
+cli() ->
+    #{help      => "Generate a SSCG using a SBOM and metadata files",
+      arguments => [argument(sbom),
+                    argument(test),
+                    argument(output),
+                    argument(authors)],
+      handler   => fun(Args) -> generate(Args) end}.
 
 argument(sbom) ->
     #{name     => sbom,
@@ -85,7 +85,7 @@ generate(#{sbom    := SBOMFile,
                             {ok, {_Name, _Content} = Result} ->
                                 Result;
                             {error, Reason} ->
-                                sscg_generator_cli:abort("Failed to read file ~s: ~p~n", [FilePath, Reason])
+                                sscg_generator_cli:abort("Failed to read file ~ts: ~p~n", [FilePath, Reason])
                         end
                     end, Files);
             {error, Reason} ->
@@ -97,11 +97,11 @@ generate(#{sbom    := SBOMFile,
             {ok, JsonData} -> JsonData;
             {error, {file_not_available, NotAvailableReason}} ->
                 sscg_generator_cli:abort(
-                    "Error: Cannot read file ~s. Reason: ~p~n",
+                    "Error: Cannot read file ~ts. Reason: ~p~n",
                     [SBOMFile, NotAvailableReason]);
             {error, invalid_json} ->
                 sscg_generator_cli:abort(
-                    "Error: Invalid JSON format in ~s~n. ", [SBOMFile])
+                    "Error: Invalid JSON format in ~ts~n. ", [SBOMFile])
         end,
 
     case is_valid_sbom(SBOMData) of
@@ -117,8 +117,7 @@ generate(#{sbom    := SBOMFile,
         _ -> []
     end,
 
-    CommandName   = atom_to_list(?FUNCTION_NAME),
-    Configuration = sscg_generator_cli:serialize_args(Args, cli(), CommandName),
+    Configuration = sscg_generator_cli:serialize_args(Args, cli()),
 
     SSCGData = generate_sscg(#{spec_version  => SpecVersion,
                                authors       => Authors,
@@ -131,7 +130,7 @@ generate(#{sbom    := SBOMFile,
             sscg_generator_cli:print(
                 color:green(
                     io_lib:format(
-                        "JSON successfully stored to ~s~n", [Path])));
+                        "JSON successfully stored to ~ts~n", [Path])));
         {error, {write_failed, FailedReason}} ->
             sscg_generator_cli:abort(
                         "Failed to store JSON. Reason: ~p~n", [FailedReason]);
@@ -289,7 +288,13 @@ generate_tool_info(static_code_analysis_module = ToolName, Configuration) ->
 
 -spec to_claim_ref(binary()) -> bom_ref().
 to_claim_ref(Name) ->
-    list_to_binary(io_lib:format("Claim: Test Suite ~s found something!", [Name])).
+    unicode:characters_to_binary(
+        io_lib:format("Claim: Test Suite ~ts found something!", [Name]),
+        utf8,
+        utf8).
 
 -spec to_evidence_ref(binary()) -> bom_ref().
-to_evidence_ref(Name) -> list_to_binary(io_lib:format("Evidence: ~s.", [Name])).
+to_evidence_ref(Name) -> 
+    unicode:characters_to_binary(io_lib:format("Evidence: ~ts.", [Name]),
+                                 utf8,
+                                 utf8).

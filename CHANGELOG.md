@@ -2,14 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
-## [0.0.1] - 2024-09-10
+### Added
 
-- [x] Cli setup
-- [ ] Generate the sscg
-- [ ] Optional: Send the files generated and the SBOM to another http endpoint.
-
-This definition is very incomplete since there are yet no clear information about e.g. test reports and API endpoints.
+- Command-line interface setup with initial functionality.
+- Subcommand: `publish`
+  - Publishes SSCG and SBOM `.json` files to a specified HTTP endpoint.
+- Subcommand: `generate`
+  - Generates an SSCG (Software Supply Chain Graph) file using the SBOM and test folder as inputs.
+    - Optional inclusion of authors metadata and a specified output path.
+  - Evidences are created directly from the test file content without analyzing file types or contents in detail—a minimal.

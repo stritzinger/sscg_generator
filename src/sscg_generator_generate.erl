@@ -1,84 +1,79 @@
-% @doc Task to generate a .json from a SBOM and metadata.
 -module(sscg_generator_generate).
+-moduledoc """
+This module provides a task to generate a `.json` file from an SBOM and test files.
 
+It also includes metadata about the tool and authors' information in the generated file.
+""".
 % API
--export([cli/0, generate/1]).
+-export([command_info/0, generate/1, generate_sscg/1]).
+
+% Include
+-include("sscg_generator.hrl").
 
 % CycloneDX endpoint
 -define(CYCLONEDX_BASE_URL, "http://cyclonedx.org/schema/").
 
-%--- Types ---------------------------------------------------------------------
-
--type decoded_json() :: map(). 
--type file_path() :: binary(). 
--type folder_path() :: binary(). 
--type spec_version() :: <<_ : _*8>>.  % A version-like format, i.e., "1.0", "2.0"
 %--- API -----------------------------------------------------------------------
+-doc "Defines the name and CLI structure for the `generate` command".
+-spec command_info() -> #{Name :: string() => Cli :: argparse:command()}.
+command_info() ->
+    #{"generate" => cli()}.
 
-% @doc Defines the CLI structure for the 'generate' command.
--spec cli() -> map().
 cli() ->
-    DefaultName  = undefined,
-    DefaultEmail = undefined,
-    ParseAuthors = fun(A) -> sscg_generator_cli:parse_authors(A, {DefaultName, DefaultEmail}) end,
-    #{
-        commands => #{
-            "generate" => #{
-                help => "Generate a SSCG using a SBOM and metadata files",
-                arguments => [
-                    #{
-                        name => sbom,
-                        long => "-sbom",
-                        short => $s,
-                        help => {"[-s <SBOM_file>]", 
-                                 fun() -> "SBOM JSON file path" end},
-                        type => binary,
-                        required => true
-                    },
-                    #{
-                        name => test,
-                        long => "-test",
-                        short => $t,
-                        help => {"[-t <test_folder>]", 
-                                 fun() -> "Test folder path" end},
-                        type => binary,
-                        required => true
-                    },
-                    #{
-                        name => output,
-                        long => "-output",
-                        short => $o,
-                        help => {"[-p <output_path>]", 
-                                 fun() -> "Output file path and name" end},
-                        type => binary,
-                        default => <<"sscg.json">>,
-                        required => false
-                    },
-                    #{
-                        name => authors,
-                        long => "-authors",
-                        short => $a,
-                        help => {"[-a <name1>:<email1>,<name2>:<email2>,...]", 
-                                 fun() -> "Specify authors' names and emails in the format: name:email" end},
-                        type => {custom, ParseAuthors},
-                        default => "",
-                        required => false
-                    }
-                ]
-            }
-        }
-    }.
+    #{help      => "Generate a SSCG using a SBOM and metadata files",
+      arguments => [argument(sbom),
+                    argument(test),
+                    argument(output),
+                    argument(authors)],
+      handler   => fun(Args) -> generate(Args) end}.
 
-% @doc The main task to generate a JSON SSCG from a SBOM file and metadata.
+argument(sbom) ->
+    #{name     => sbom,
+      long     => "-sbom",
+      short    => $s,
+      help     => {"[-s <SBOM_file>]", fun() -> "SBOM JSON file path" end},
+      type     => binary,
+      required => true};
+argument(test) ->
+    #{name     => test,
+      long     => "-test",
+      short    => $t,
+      help     => {"[-t <test_folder>]", fun() -> "Test folder path" end},
+      type     => binary,
+      required => true};
+argument(output) ->
+    #{name     => output,
+      long     => "-output",
+      short    => $o,
+      help     => {"[-p <output_path>]", fun() -> "Output file path and name" end},
+      type     => binary,
+      default  => <<"sscg.json">>,
+      required => false};
+argument(authors) ->
+    ParseAuthors = 
+        fun (Authors) -> sscg_generator_cli:parse_authors(Authors) end,
+
+    #{name     => authors,
+      long     => "-authors",
+      short    => $a,
+      help     => {"[-a <name1>:<email1>,:<email2>,<name3>:...]",
+                   fun() -> "Specify authors' names and emails" end},
+      type     => {custom, ParseAuthors},
+      default  => [],
+      required => false}.
+
+-doc "Generates a `.json` SSCG from a SBOM file".
 -spec generate(Args) -> Result
-  when Args :: #{sbom    := file_path(), 
-                 test    := folder_path(),
-                 authors := list()},
-       Result :: ok | no_return().
-generate(#{
-    sbom    := SBOMFile,
-    test    := TestFolder,  
-    authors := Authors} = Args) ->
+    when Args :: #{sbom    := file_path(),
+                   test    := folder_path(),
+                   output  := file_path(),
+                   authors := [#{name := binary(), email := binary}]},
+         Result :: ok | no_return().
+generate(#{sbom    := SBOMFile,
+           test    := TestFolder,
+           output  := OutputPath,
+           authors := Authors} = Args) ->
+    sscg_generator_cli:init(Args),
 
     Tests =
         case file:list_dir(TestFolder) of
@@ -86,12 +81,11 @@ generate(#{
                 lists:map(
                     fun(File) ->
                         FilePath = filename:join(TestFolder, File),
-                        FileName = sscg_generator_utils:get_filename_from_path(FilePath),
-                        case file:read_file(FilePath) of
-                            {ok, Content} ->
-                                {FileName, Content};
+                        case sscg_generator_utils:process_file(FilePath) of
+                            {ok, {_Name, _Content} = Result} ->
+                                Result;
                             {error, Reason} ->
-                                sscg_generator_cli:abort("Failed to read file ~s: ~p~n", [FilePath, Reason])
+                                sscg_generator_cli:abort("Failed to read file ~ts: ~p~n", [FilePath, Reason])
                         end
                     end, Files);
             {error, Reason} ->
@@ -103,12 +97,11 @@ generate(#{
             {ok, JsonData} -> JsonData;
             {error, {file_not_available, NotAvailableReason}} ->
                 sscg_generator_cli:abort(
-                    "Error: Cannot read file ~s. Reason: ~p~n", 
+                    "Error: Cannot read file ~ts. Reason: ~p~n",
                     [SBOMFile, NotAvailableReason]);
             {error, invalid_json} ->
                 sscg_generator_cli:abort(
-                    "Error: Invalid JSON format in ~s~n", 
-                    [SBOMFile])
+                    "Error: Invalid JSON format in ~ts~n. ", [SBOMFile])
         end,
 
     case is_valid_sbom(SBOMData) of
@@ -123,51 +116,47 @@ generate(#{
            [Component];
         _ -> []
     end,
-    CommandName   = atom_to_list(?FUNCTION_NAME),
-    Configuration = sscg_generator_cli:serialize_args(Args, cli(), CommandName),
 
-    SSCGData = generate_sscg(
-        #{spec_version  => SpecVersion, 
-          authors       => Authors, 
-          targets       => Targets,
-          tests         => Tests,
-          configuration => Configuration
-        }),
+    Configuration = sscg_generator_cli:serialize_args(Args, cli()),
 
-    OutputPath = maps:get(output, Args),
+    SSCGData = generate_sscg(#{spec_version  => SpecVersion,
+                               authors       => Authors,
+                               targets       => Targets,
+                               tests         => Tests,
+                               configuration => Configuration}),
+
     case sscg_generator_utils:write_json(OutputPath, SSCGData) of
         {ok, Path} -> 
             sscg_generator_cli:print(
                 color:green(
                     io_lib:format(
-                        "JSON successfully stored to ~s~n", [Path])));
-        {error, {encode_errors, EncodingReason}} -> 
+                        "JSON successfully stored to ~ts~n", [Path])));
+        {error, {write_failed, FailedReason}} ->
             sscg_generator_cli:abort(
-                        "Failed to encode JSON. Reason: ~p~n", [EncodingReason]);
-        {error, {write_failed, WriteReason}} -> 
+                        "Failed to store JSON. Reason: ~p~n", [FailedReason]);
+        {error, {encode_error, EncodingReason}} ->
             sscg_generator_cli:abort(
-                        "Failed to store JSON. Reason: ~p~n", [WriteReason])
+                        "Failed to encode JSON. Reason: ~p~n", [EncodingReason])
     end,
     ok.
 
 %--- Internal Functions --------------------------------------------------------
 
-%% @doc
 %% Generates an SSCG (Static Software Supply Chain Guarantee) map in a CycloneDX
 %% format using provided information. 
--spec generate_sscg(Map) -> Result
- when Map :: #{spec_version := binary(), 
-               authors      := [binary()],
-               targets       := [map()],
-               tests        := [{ Name :: binary(), Content :: binary()}]},
-      Result :: map().
+-spec generate_sscg(Args) -> Result
+    when Args   :: #{spec_version  := version(),
+                     authors       := [binary()],
+                     targets       := [component()],
+                     tests         := [{Name :: binary(), Content :: binary()}],
+                     configuration := binary()},
+      Result :: sscg().
 generate_sscg(
-    #{spec_version  := SpecVersion, 
+    #{spec_version  := SpecVersion,
       authors       := Authors,
-      targets       := Targets ,
+      targets       := Targets,
       tests         := Tests,
-      configuration := Configuration
-    }) ->
+      configuration := Configuration}) ->
 
     Timestamp = sscg_generator_utils:current_timestamp(),
     SerialNumber = sscg_generator_utils:serial_number(),
@@ -176,79 +165,48 @@ generate_sscg(
     ReSCALEStandardURL = <<"https://rescale-project.eu/standard/", ReSCALEVersion/binary>>,
     ReSCALEStandardConformanceURL= <<ReSCALEStandardURL/binary, "/conformance/complete">>,
 
-    Claims = [{to_claim(Name), Content} || {Name, Content} <- Tests],
+    Claims = [{to_claim_ref(Name), Content} || {Name, Content} <- Tests],
 
-    #{
-        bomFormat    => <<"CycloneDX">>,
-        specVersion  => SpecVersion,
-        serialNumber => SerialNumber,
-        metadata     => #{
-            timestamp => Timestamp,
-            authors   => Authors,
-            tools     => 
-                #{components => 
-                    [
-                        generate_tool_info(sscg_generator, Configuration),
-                        generate_tool_info(static_code_analysis_module,
-                                           <<"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false">> )
-                    ]
-                }
-        },
-        definitions  => #{
-            standards => [
-              #{
-                'bom-ref'    => ReSCALEStandardURL,
-                name         => <<"The ReSCALE Standard">>,
-                description  => <<"The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)">>,
-                version      => ReSCALEVersion,
-                requirements => [
-                  #{
-                    'bom-ref'  => ReSCALEStandardConformanceURL,
-                    identifier => <<"/rescale/", ReSCALEVersion/binary ,"/conformance/complete">>,
-                    title      => <<"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings">>
-                  }
-                ]
-              }
-            ]
-        },
-        declarations => #{
-            targets        => #{components => Targets},
-            attestations => [
-                #{
-                    assessor => <<"Producer Reference">>,
-                    summary  => <<"Mapping of Requirements to Claims">>,
-                    map      => [
-                      #{
-                        requirement   => ReSCALEStandardConformanceURL,
-                        claims => [Name || {Name, _Content } <- Claims]
-                      }
-                    ]
-                  }
-            ],
-            claims        => [
-                #{
-                    <<"bom-ref">> => Name,
-                    %TODO: Include real target
-                    target        => undefined,
-                    evidence      => [to_evidence(Content)]
-                } || {Name, Content} <- Claims
-            ],
-            evidence      => [
-                #{
-                    <<"bom-ref">> => to_evidence(Content),
-                    description   => <<"TODO - Specify test results output">>,
-                    data          => [
-                        #{
-                            contents => #{attachment => #{content => Content}}
-                        }
-                    ]
-                } || {_Name, Content} <- Claims
-            ]
-        }
+    SCAConfiguration =  <<"RESCALE_STATIC_ANALYSIS_LANG=erlang\nRESCALE_DRY_RUN=false">>,
+
+    #{bomFormat    => <<"CycloneDX">>,
+      specVersion  => SpecVersion,
+      serialNumber => SerialNumber,
+      metadata     => #{timestamp => Timestamp,
+                        authors   => Authors,
+                        tools     => 
+                            #{components => 
+                                [generate_tool_info(sscg_generator, Configuration),
+                                 generate_tool_info(static_code_analysis_module,
+                                                    SCAConfiguration)]}},
+      definitions  => 
+          #{standards => 
+               [#{'bom-ref'    => ReSCALEStandardURL,
+                  name         => <<"The ReSCALE Standard">>,
+                  description  => <<"The ReSCALE Standard describes a workflow to create a Trusted BOM (TBOM)">>,
+                  version      => ReSCALEVersion,
+                  requirements => [#{'bom-ref'  => ReSCALEStandardConformanceURL,
+                                     identifier => <<"/rescale/", ReSCALEVersion/binary ,"/conformance/complete">>,
+                                     title      => <<"Full conformance with ReSCALE's 'complete' profile, e.g. complete absence of findings">>}]
+                }]},
+      declarations =>
+          #{targets      => #{components => Targets},
+            attestations => [#{assessor => <<"Producer Reference">>,
+                               summary  => <<"Mapping of Requirements to Claims">>,
+                               map      => [#{requirement => ReSCALEStandardConformanceURL,
+                                              claims      => [Name || {Name, _Content } <- Claims]}]
+                             }],
+            claims       => [#{'bom-ref' => Name,
+                               target    => undefined, %TODO: Include real target
+                               evidence  => [to_evidence_ref(Content)]}
+                             || {Name, Content} <- Claims],
+            evidence     => [#{'bom-ref'   => to_evidence_ref(Content),
+                               description => <<"TODO - Specify test results output">>,
+                               data        => [#{contents => #{attachment => #{content => Content}}}]}
+                             || {_Name, Content} <- Claims]
+            }
     }.
 
-
-% @doc 
 % Validates whether the given JSON data represents a valid SBOM (Software Bill 
 % of Materials). A valid SBOM must meet the following criteria:
 % - It must contain the `"specVersion"` field, which specifies the version of the SBOM.
@@ -275,91 +233,68 @@ is_valid_sbom(JsonData) ->
             false
     end.
 
-% @doc Retrieves the CycloneDX schema for the given specification version.
+% Retrieves the CycloneDX schema for the given specification version.
 -spec get_schema(SpecVersion) -> Result
-      when SpecVersion :: spec_version(),
-           Result      :: {ok, decoded_json()} 
-                          | {error, {request_failed,    Reason}}
-                          | {error, {unexpected_status, StatusCode}}
-                          | {error, {body_read_error,   Reason}}
-                          | {error, {invalid_json,      Reason}},
-           Reason      :: term(),
-           StatusCode  :: non_neg_integer().
+    when SpecVersion :: version(),
+         Result      :: {ok, decoded_json()} 
+                        | {error, {request_failed,    Reason}}
+                        | {error, {unexpected_status, StatusCode}}
+                        | {error, {body_read_error,   Reason}}
+                        | {error, {invalid_json,      Reason}},
+         Reason      :: term(),
+         StatusCode  :: non_neg_integer().
 get_schema(SpecVersion) ->
     URL  =  <<?CYCLONEDX_BASE_URL, "bom-", SpecVersion/binary, ".schema.json">>,
     sscg_generator_http:get_json(URL).
 
-% @doc Function to validate an email address
-%-spec validate_email(binary()) -> boolean().
-% validate_email(Email) ->
-%     Regex = "^[A-Za-z0-9._%+~\\-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
-%     case re:run(Email, Regex, [unicode]) of
-%         {match, _} -> true;
-%         nomatch -> false
-%     end.
-
--spec generate_tool_info(Tool, Configuration) -> Result 
- when Tool           :: sscg_generator | static_code_analysis_module,
-      Configuration  :: binary(),
-      Result         :: map().
+-spec generate_tool_info(Tool, Configuration) -> Result
+    when Tool           :: sscg_generator | static_code_analysis_module,
+         Configuration  :: binary(),
+         Result         :: component().
 generate_tool_info(sscg_generator, Configuration) -> 
     {ok, Version} = sscg_generator_app_info:get_version(),
     VersionBinary = list_to_binary(Version),
 
     Name = atom_to_binary(sscg_generator_app_info:get_app_name(), utf8),
 
-    #{
-        type           => application,
-        name           => <<"ReSCALE SSCG Generator">>,
-        version        => VersionBinary,
-        description    => <<"A ReSCALE certified tool to generate SSCGs">>,
-        purl           => <<"pkg:hex/", Name/binary, "@", VersionBinary/binary>>,
-        data           => [
-            #{
-            name => <<"CLI configuration flags">>,
-            type => configuration,
-            contents => #{
-                attachment => #{
-                    content => Configuration
-                    }
-                }
-            }
-        ],
-        % TODO: Generate it
-        hashes => [#{alg     => <<"SHA-1">>, 
+    #{type           => <<"application">>,
+      name           => <<"ReSCALE SSCG Generator">>,
+      version        => VersionBinary,
+      description    => <<"A ReSCALE certified tool to generate SSCGs">>,
+      purl           => <<"pkg:hex/", Name/binary, "@", VersionBinary/binary>>,
+      data           => [#{name     => <<"CLI configuration flags">>,
+                           type     => <<"configuration">>,
+                           contents => #{attachment => #{content => Configuration}}
+                        }],
+        hashes => [#{alg     => <<"SHA-1">>, % TODO: Generate it
                      content => <<"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12">>}]
     };
 %% TODO: Dynamically generate this or extract to deps file
 generate_tool_info(static_code_analysis_module = ToolName, Configuration) ->
-    Version = <<"1.0.0">>,
-    Name = atom_to_binary(ToolName, utf8),
+  Version = <<"1.0.0">>,
+  Name    = atom_to_binary(ToolName, utf8),
 
-    #{   
-        type        => container,
-        name        => <<"ReSCALE Static Code Analysis Module">>,
-        version     => Version, 
-        description => <<"A ReSCALE certified container to execute static testing">>,
-        purl        => <<"pkg:docker/", Name/binary, "@", Version/binary>>,
-        data        => [
-            #{
-            name     => <<"Docker Environment">>, 
-            type     => configuration,
-            contents => #{
-                attachment => #{
-                content => Configuration
-                }
-            }
-            }
-        ],
-        % TODO: Generate it
-        hashes => [#{alg     => <<"SHA-1">>, 
-                     content => <<"35d1c8f259129dc800ec8e073bb68f995424619c">>}]
-    }.
+    #{type        => <<"container">>,
+      name        => <<"ReSCALE Static Code Analysis Module">>,
+      version     => Version, 
+      description => <<"A ReSCALE certified container to execute static testing">>,
+      purl        => <<"pkg:docker/", Name/binary, "@", Version/binary>>,
+      data        => [#{name     => <<"Docker Environment">>,
+                        type     => <<"configuration">>,
+                        contents => #{attachment => #{content => Configuration}}
+                    }],
+      hashes => [#{alg     => <<"SHA-1">>, % TODO: Generate it
+                   content => <<"35d1c8f259129dc800ec8e073bb68f995424619c">>}]}.
 
-to_claim(Name) -> 
-    list_to_binary(
-        io_lib:format("Claim: Test Suite ~s found something!", [Name])).
+-spec to_claim_ref(binary()) -> bom_ref().
+to_claim_ref(Name) ->
+    unicode:characters_to_binary(
+        io_lib:format("Claim: Test Suite ~ts found something!", [Name]),
+        utf8,
+        utf8).
 
-to_evidence(Name) -> 
-    list_to_binary(
-        io_lib:format("Evidence: ~s.", [Name])).
+-spec to_evidence_ref(binary()) -> bom_ref().
+to_evidence_ref(Name) -> 
+    unicode:characters_to_binary(io_lib:format("Evidence: ~ts.", [Name]),
+                                 utf8,
+                                 utf8).

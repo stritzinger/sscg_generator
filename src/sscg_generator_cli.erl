@@ -1,5 +1,5 @@
-% @doc Helper functions for CLI.
 -module(sscg_generator_cli).
+-moduledoc "This module provides helper functions for CLI".
 
 % API
 -export([init/1]).
@@ -8,19 +8,16 @@
 -export([print/2]).
 -export([input/1]).
 -export([confirm/1]).
--export([parse_range/2]).
--export([parse_authors/2]).
--export([serialize_args/3]).
+-export([parse_authors/1]).
+-export([serialize_args/2]).
 
 % Callbacks
 -export([format/2]).
 
 -include_lib("kernel/include/logger.hrl").
 
--define(YES, "^[Yy]([Ee][Ss])?$").
-
 %--- API -----------------------------------------------------------------------
-
+-doc "Init client (e.g., adjusts log verbosity based on input arguments)".
 init(Args) ->
     set_log_level(Args),
     ?LOG_DEBUG("ARGS: ~p", [Args]),
@@ -33,14 +30,22 @@ set_log_level(#{verbose := 1}) ->
 set_log_level(#{}) ->
     ok.
 
+-doc "Aborts the program with a red formatted error message".
+-spec abort(Format :: string(), Args :: list()) -> Result :: no_return().
 abort(Format, Args) ->
-    io:format("~s~n", [color:red(io_lib:format(Format, Args))]),
+    io:format("~ts~n", [color:red(io_lib:format(Format, Args))]),
     erlang:halt(1).
 
+-doc #{equiv => print(Text, [])}.
 print(Text) -> print(Text, []).
+
+-doc "Prints a formatted message to the console".
+-spec print(string(), [term()]) -> ok.
 print(Format, Args) ->
     io:format(Format ++ "~n", Args).
 
+-doc "Prompts the user for input".
+-spec input(string()) -> string() | no_return().
 input(Prompt) ->
     case io:get_line(Prompt ++ " ") of
         eof ->
@@ -48,69 +53,60 @@ input(Prompt) ->
         {error, Reason} ->
             abort("Error reading input: ~p", [Reason]);
         Data ->
-            re:replace(Data, "^[[:space:]]*+|[[:space:]]*+$", <<>>,
-                [global, {return, binary}]
-            )
+            string:trim(Data)
     end.
 
+-doc "Prompts a yes/no-question and returns a boolean based on the response".
+-spec confirm(string()) -> boolean().
 confirm(Prompt) ->
-    case re:run(input(Prompt), ?YES, [{capture, none}]) of
-        match -> true;
-        _     -> false
-    end.
+    string:equal(input(Prompt), "yes", true).
 
-parse_range(Range, {DefaultFrom, DefaultTo}) ->
-    {From, To} = case string:split(Range, "..") of
-        [Start, []] ->
-            {parse_date(Start, first), DefaultTo};
-        [[], ToString] ->
-            {DefaultFrom, parse_date(ToString, last)};
-        [Start, ToString] ->
-            {parse_date(Start, first), parse_date(ToString, last)};
+-doc """
+Parses a binary containing a comma-separated list of authors into a list of maps.
+Each author entry should be in the format "<name>:<email>". Entries with missing
+ name or email are also supported:
+- "<name>:" will result in a map with `name` set and `email` as `undefined`.
+- ":<email>" will result in a map with `email` set and `name` as `undefined`.
+If the format is invalid, the function will abort with an error.
+""".
+-spec parse_authors(Authors) -> Result
+    when Authors :: string(),
+         Result  :: [#{name => binary(), email => binary()}] | no_return().
+parse_authors(Authors) ->
+    AuthorEntries = string:split(Authors, ",", all),
+    lists:map(fun parse_author/1, AuthorEntries).
+
+parse_author(AuthorEntry) ->
+    case string:split(AuthorEntry, ":", all) of
+        [Name, Email] ->
+            Name1 = string:strip(Name),
+            Email1 = string:strip(Email),
+            case {string:equal(Name1, ""), string:equal(Email1, "")} of
+                {false, false} ->
+                    #{name  => unicode:characters_to_binary(Name1, utf8, utf8),
+                      email => unicode:characters_to_binary(Email1, utf8, utf8)};
+                {false, true} ->
+                    #{name  => unicode:characters_to_binary(Name1, utf8, utf8),
+                      email => undefined};
+                {true, false} ->
+                    #{name  => undefined,
+                      email => unicode:characters_to_binary(Email1, utf8, utf8)};
+                _ ->
+                    abort("Failed parsing authors. Reason: ~ts.~n", [invalid_format])
+            end;
         _ ->
-            error(invalid_argument)
-    end,
-    case {From, To} of
-        {From, To} when From > To -> error(invalid_argument);
-        % {_, To} when To > DefaultTo -> error(invalid_argument);
-        Else -> Else
+            abort("Failed parsing authors. Reason: ~ts.~n", [invalid_format])
     end.
 
--spec parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) -> Result
-    when AuthorsStr   :: binary(),
-         DefaultEmail :: binary(),
-         DefaultName  :: binary(),
-         Result       :: [#{name => binary(), email => binary()}] | error.
-parse_authors(AuthorsStr, {DefaultName, DefaultEmail}) ->
-    AuthorEntries = string:split(AuthorsStr, ",", all),
-
-    lists:map(fun(AuthorEntry) ->
-                    case string:split(AuthorEntry, ":", all) of
-                        [Name, Email] when Name =/= [] andalso Email =/= [] ->
-                            #{name  => list_to_binary(string:strip(Name)),
-                              email => list_to_binary(string:strip(Email))};
-                        [Name, []] -> 
-                            #{name  => list_to_binary(string:strip(Name)),
-                              email => DefaultEmail};
-                        [[], Email] -> 
-                            #{name  => DefaultName,
-                              email => list_to_binary(string:strip(Email))};
-                        _ -> 
-                            abort("Failed parsing authors. Reason: ~s. ~n",[invalid_format])
-                    end
-                end, AuthorEntries).
-
-% @doc Serializes the Args map back into a command-line string using 
-% the CLI structure.
--spec serialize_args(Args, CLI, CommandName) -> Result
-  when Args        :: map(), 
-       CLI         :: map(),
-       CommandName :: binary(),
-       Result      :: binary().
-serialize_args(Args, CLI, CommandName) ->
-    Commands = maps:get(commands, CLI),
-    Command = maps:get(CommandName, Commands),
-    Arguments = maps:get(arguments, Command),
+-doc """
+Serializes the arguments map into a command-line binary using the Cli structure.
+""".
+-spec serialize_args(Args, Cli) -> Result
+    when Args        :: map(), 
+         Cli         :: argparse:command(),
+         Result      :: binary().
+serialize_args(Args, Cli) ->
+    Arguments = maps:get(arguments, Cli),
     
     SerializedArgsList = lists:map(
         fun(ArgSpec) ->
@@ -120,33 +116,47 @@ serialize_args(Args, CLI, CommandName) ->
         Arguments),
     list_to_binary(string:join(SerializedArgsList, " ")).
 
--spec serialize_arg(atom(), map(), map()) -> binary().
 serialize_arg(ArgName, Args, ArgSpec) ->
     case maps:find(ArgName, Args) of
         {ok, Value} ->
             LongOpt = maps:get(long, ArgSpec),
             case maps:get(type, ArgSpec) of
                 binary ->
-                    io_lib:format("-~s ~s", [LongOpt, binary_to_list(Value)]);
+                    io_lib:format("-~ts ~ts", [LongOpt, binary_to_list(Value)]);
                 {custom, _ParseFun} when ArgName == authors ->
-                    io_lib:format("-~s ~s", [LongOpt, binary_to_list( serialize_authors(Value))]);
+                    io_lib:format("-~ts ~ts",
+                                  [LongOpt,
+                                   binary_to_list( serialize_authors(Value))]);
                 _ -> <<"">>
             end;
         error -> <<"">>  % If the argument is not present, return an empty string
     end.
 
--spec serialize_authors([#{name := binary(), email := binary()}]) -> binary().
+-spec serialize_authors(Authors) -> Result
+    when Authors ::[#{name := binary(), email := binary()}
+                   | #{email := binary()}
+                   | #{name  := binary()}],
+         Result  :: binary().
 serialize_authors(Authors) ->
-    AuthorEntries = lists:map(fun(Author) ->
-                                    Name = maps:get(name, Author),
-                                    Email = maps:get(email, Author),
-                                    NameAndEmail = [binary_to_list(Name), ":", binary_to_list(Email)],
-                                    string:join(NameAndEmail, "")
-                                end, Authors),
-    list_to_binary(string:join(AuthorEntries, ",")).
+    AuthorEntries = lists:map(fun serialize_author/1, Authors),
+    unicode:characters_to_binary(string:join(AuthorEntries, ","), utf8, utf8).
+
+serialize_author(Author) ->
+    Name  = maps:get(name, Author, undefined),
+    Email = maps:get(email, Author, undefined),
+    NameStr = case Name of
+                    undefined -> "";
+                    _ when is_binary(Name) -> binary_to_list(Name);
+                    _ -> Name
+                end,
+    EmailStr = case Email of
+                    undefined -> "";
+                    _ when is_binary(Email) -> binary_to_list(Email);
+                    _ -> Email
+                end,
+    string:join([NameStr, EmailStr], ":").
 
 %--- Callbacks -----------------------------------------------------------------
-
 format(Event, _Config) ->
     #{
         level := Level,
@@ -160,7 +170,7 @@ format(Event, _Config) ->
         erlang:convert_time_unit(Time, microsecond, millisecond),
         [{unit, millisecond}, {time_designator, $\s}, {offset, "Z"}]
     ),
-    io_lib:format("~s ~s ~p:~p/~b~n", [
+    io_lib:format("~ts ~ts ~p:~p/~b~n", [
         Timestamp,
         format_level(Level),
         Module, Function, Arity
@@ -171,38 +181,3 @@ format_level(Level) ->
 
 format_level(debug, String) -> color:on_cyan([<<"[">>, String, <<"]">>]);
 format_level(_Level, String) -> String.
-
-%----- Internal functions ------------------------------------------------------
-
-parse_date(String, Preferred) ->
-    Result = re:run(
-        String,
-        "
-            (?<year>\\d{4}) # year
-            (-(?<month>\\d{2}) # optional month
-                (-(?<day>\\d{2}))? # optional day
-            )?",
-        [extended, {capture, all_names, list}]
-    ),
-    case Result of
-        {match, Match} ->
-            ToInteger = fun([]) -> undefined; (S) -> list_to_integer(S) end,
-            fix_date(lists:map(ToInteger, Match), Preferred);
-        nomatch ->
-            error(invalid_argument)
-    end.
-
-fix_date([undefined, undefined, Year], first) ->
-    {Year, 1, 1};
-fix_date([undefined, undefined, Year], last) ->
-    {Year, 12, 31};
-fix_date([undefined, Month, Year], last) ->
-    {Year, Month, calendar:last_day_of_the_month(Year, Month)};
-fix_date([undefined, Month, Year], first) ->
-    {Year, Month, 1};
-fix_date([Day, Month, Year], _Preferred) ->
-    Date = {Year, Month, Day},
-    case calendar:valid_date(Date) of
-        true -> Date;
-        false -> error(invalid_argument)
-    end.

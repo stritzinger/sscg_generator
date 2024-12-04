@@ -1,68 +1,68 @@
-% @doc Main application and CLI entry point.
 -module(sscg_generator).
+-moduledoc "Main application and CLI entry point".
 
 -behaviour(application).
--behaviour(cli).
 
 -define(REQUIRED_OTP_VERSION, 26).
 
 % Callbacks
--export([main/1]).
--export([cli/0]).
-
--export([start/2]).
--export([stop/1]).
+-export([main/1, cli/0]).
+-export([start/2, stop/1]).
 
 %--- Callbacks -----------------------------------------------------------------
 
-% @doc Main CLI entry point.
+%--- Callbacks: Application
+-doc "Main CLI entry point".
+-spec main(Args :: [string()]) -> term() | no_return().
 main(Args) ->
-    check_otp_version(?REQUIRED_OTP_VERSION),
-    {ok, _} = application:ensure_all_started(sscg_generator),
-    cli:run(Args, #{
-        progname => ?MODULE,
-        modules => [?MODULE,
-                    sscg_generator_generate,
-                    sscg_generator_publish],
-        warn => false
-    }).
+    case ensure_minimum_otp_version(?REQUIRED_OTP_VERSION) of
+        ok ->
+            {ok, _} = application:ensure_all_started(sscg_generator),
+            Options = #{progname => ?MODULE},
+            argparse:run(Args, cli(), Options);
+        {error, {otp_version_too_old, Actual, Desired}} ->
+            sscg_generator_cli:abort("OTP version ~p is too old. At least ~p required.~n", [Actual, Desired]);
+        {error, {unable_to_determine_otp_version, Info}} ->
+            sscg_generator_cli:abort("Error: Unable to determine OTP version. Info: ~p~n", [Info])
+   end.
 
-% @private
+
+-doc "Defines the CLI structure for the main command".
+-spec cli() -> argparse:command().
 cli() ->
-    #{
-        arguments => [
-            #{
-                name => verbose,
-                long => "-verbose",
-                short => $v,
-                action => count,
-                type => boolean,
-                help => "control verbosity level (max -vv)"
-            }
-        ]
-    }.
 
-% @doc Application start callback.
-%
-% Starts application and initialize data structures and tables.
+    CommandList = [sscg_generator_generate:command_info(),
+                   sscg_generator_publish:command_info()],
+
+    Commands = lists:foldl(fun maps:merge/2, #{}, CommandList),
+
+    #{arguments => 
+        [#{name   => verbose,
+           long   => "-verbose",
+           short  => $v,
+           action => count,
+           type   => boolean,
+           help   => "control verbosity level (max -vv)"}],
+      commands  => Commands}.
+
+%--- Callbacks: Cli
+-doc "Application start callback".
 start(_Type, _Args) ->
     {ok, self()}.
 
-% @doc Application stop callback.
+-doc "Application stop callback".
 stop(_State) -> ok.
 
 %--- Internal ------------------------------------------------------------------
+ensure_minimum_otp_version(RequiredVersion) ->
+    Release = erlang:system_info(otp_release),
+    try
+        compare_otp_versions(RequiredVersion, list_to_integer(Release))
+    catch
+        _:_ -> {error, {unable_to_determine_otp_version, Release}}
+    end.
 
-check_otp_version(Version) ->
-    check_otp_version(
-        Version,
-        list_to_integer(erlang:system_info(otp_release))
-    ).
-
-check_otp_version(Desired, Actual) when Actual < Desired ->
-    sscg_generator_cli:abort("OTP version ~p too old. At least ~p required.", [
-        Actual,
-        Desired
-    ]);
-check_otp_version(_, _) ->
+compare_otp_versions(Required, Current) when Current < Required ->
+    {error, {otp_version_too_old, Current, Required}};
+compare_otp_versions(_, _) ->
     ok.

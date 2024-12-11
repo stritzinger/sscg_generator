@@ -5,7 +5,7 @@
 
 % Define
 -define(MOCK_URL, <<"http://mock.endpoint">>).
--define(MOCK_JSONDATA, #{token => <<"mock_token">>}).
+-define(MOCK_JSONDATA, #{}).
 
 % Test Setup
 -export([all/0, init_per_testcase/2, end_per_testcase/2]).
@@ -37,7 +37,7 @@ successful_request_test(_Config) ->
                 fun(post, _URL, _Headers, _Payload, _Options) ->
                     {ok, 200, [], <<>>}
                 end),
-    ?assertEqual(ok, sscg_generator_http:post_json(?MOCK_URL, ?MOCK_JSONDATA)).
+    ?assertEqual(ok, sscg_generator_http:post_json(?MOCK_URL, [], ?MOCK_JSONDATA)).
 
 unexpected_status_code_test(_Config) ->
     meck:expect(hackney,
@@ -46,7 +46,7 @@ unexpected_status_code_test(_Config) ->
                     {ok, 404, [], <<"Not Found">>}
                 end),
     ?assertEqual({error, {unexpected_status, 404}},
-                    sscg_generator_http:post_json(?MOCK_URL, ?MOCK_JSONDATA)).
+                    sscg_generator_http:post_json(?MOCK_URL, [], ?MOCK_JSONDATA)).
 
 request_failure_test(_Config) ->
     meck:expect(hackney,
@@ -55,7 +55,7 @@ request_failure_test(_Config) ->
                     {error, timeout}
                 end),
     ?assertEqual({error, {request_failed, timeout}},
-                 sscg_generator_http:post_json(?MOCK_URL, ?MOCK_JSONDATA)).
+                 sscg_generator_http:post_json(?MOCK_URL, [], ?MOCK_JSONDATA)).
 
 forbidden_request_test(_Config) ->
     meck:expect(hackney,
@@ -64,4 +64,4 @@ forbidden_request_test(_Config) ->
                     {ok, 403, [], <<"Forbidden">>}
                 end),
     ?assertEqual({error, {unexpected_status, 403}},
-                 sscg_generator_http:post_json(?MOCK_URL, ?MOCK_JSONDATA)).
+                 sscg_generator_http:post_json(?MOCK_URL, [], ?MOCK_JSONDATA)).

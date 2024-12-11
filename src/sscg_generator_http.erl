@@ -1,6 +1,6 @@
 -module(sscg_generator_http).
 
--export([get_json/1, post_json/2]).
+-export([get_json/1, post_json/3]).
 
 % @doc
 % Perform an HTTP GET request to a JSON resource and return the decoded JSON.
@@ -47,17 +47,20 @@ get_json(URL) ->
 %
 % This function sends a JSON-encoded payload to the provided URL. It handles
 % errors such as request failures and invalid response status codes.
--spec post_json(URL, JsonData) -> Result
-    when URL        :: binary(),
-         JsonData   :: map(),
-         Result     :: ok
-                       | {error, {encode_error,      Reason}}
-                       | {error, {request_failed,    Reason}}
-                       | {error, {unexpected_status, StatusCode}},
-         Reason     :: term(),
-         StatusCode :: non_neg_integer().
-post_json(URL, JsonData) ->
-    Headers = [{<<"Content-Type">>, <<"application/json">>}],
+-spec post_json(URL, ExtraHeaders, JsonData) -> Result
+    when URL          :: binary(),
+         ExtraHeaders :: [{binary(), binary()}],
+         JsonData     :: map(),
+         Result       :: ok
+                        | {error, {encode_error,      Reason}}
+                        | {error, {request_failed,    Reason}}
+                        | {error, {unexpected_status, StatusCode}},
+         Reason       :: term(),
+         StatusCode   :: non_neg_integer().
+post_json(URL, ExtraHeaders, JsonData) ->
+    ExtraHeaders1 = lists:keysort(1, ExtraHeaders),
+    Headers0 = [{<<"Content-Type">>, <<"application/json">>}],
+    Headers = lists:ukeymerge(1, Headers0, ExtraHeaders1),
     EncodeOpts = [{indent, 4},
                   {float_format, [{scientific, 2}]},
                   native_forward_slash,

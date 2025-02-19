@@ -70,7 +70,7 @@ read_json(JsonPath) ->
 write_json(OutputPath, JsonData) -> 
     DefaultOptions = [{indent, 4},
                       {float_format, [{scientific, 2}]}, 
-                      skip_undefined, native_forward_slash],
+                      skip_undefined, native_forward_slash, native_utf8],
     write_json(OutputPath, JsonData, DefaultOptions).
 
 -doc "Writes the given JSON data to the specified file path".

@@ -107,7 +107,6 @@ Serializes the arguments map into a command-line binary using the Cli structure.
          Result      :: binary().
 serialize_args(Args, Cli) ->
     Arguments = maps:get(arguments, Cli),
-    
     SerializedArgsList = lists:map(
         fun(ArgSpec) ->
             ArgName = maps:get(name, ArgSpec),
@@ -122,11 +121,11 @@ serialize_arg(ArgName, Args, ArgSpec) ->
             LongOpt = maps:get(long, ArgSpec),
             case maps:get(type, ArgSpec) of
                 binary ->
-                    io_lib:format("-~ts ~ts", [LongOpt, binary_to_list(Value)]);
+                    io_lib:format("-~ts ~ts", [LongOpt, unicode:characters_to_list(Value)]);
                 {custom, _ParseFun} when ArgName == authors ->
                     io_lib:format("-~ts ~ts",
                                   [LongOpt,
-                                   binary_to_list( serialize_authors(Value))]);
+                                   unicode:characters_to_list(serialize_authors(Value))]);
                 _ -> <<"">>
             end;
         error -> <<"">>  % If the argument is not present, return an empty string

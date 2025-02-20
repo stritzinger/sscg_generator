@@ -112,10 +112,9 @@ generate(#{sbom    := SBOMFile,
 
     SpecVersion   = <<"1.6">>,
     Targets = case maps:get(<<"metadata">>, SBOMData, undefined) of
-        #{<<"component">> := Component} ->
-           [Component];
-        _ -> []
-    end,
+                  #{<<"component">> := Component} -> [Component];
+                  _ -> []
+              end,
     SBOMHash = case os:cmd("which json-canonicalization") of
         [] ->
             %% if the canonicalizer from the static code
@@ -171,15 +170,15 @@ generate(#{sbom    := SBOMFile,
 %% Generates an SSCG (Static Software Supply Chain Guarantee) map in a CycloneDX
 %% format using provided information. 
 -spec generate_sscg(Map) -> Result
- when Map :: #{spec_version := binary(), 
-               authors      := [binary()],
-               targets      := [component()],
-               sbom_hash    := binary(),
-               sbom_serial  := binary(),
-               sbom_version := integer(),
-               tests        := [{ Name :: binary(), Content :: binary()}],
-               configuration := binary()},
-      Result :: sscg().
+    when Map :: #{spec_version  := binary(), 
+                  authors       := [binary()],
+                  targets       := [component()],
+                  sbom_hash     := string() | unicode:chardata(),
+                  sbom_serial   := string() | unicode:chardata(),
+                  sbom_version  := integer(),
+                  tests         := [{ Name :: binary(), Content :: binary()}],
+                  configuration := binary()},
+         Result :: sscg().
 generate_sscg(
     #{spec_version  := SpecVersion,
       authors       := Authors,

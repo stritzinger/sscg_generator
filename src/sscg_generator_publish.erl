@@ -72,7 +72,6 @@ publish(#{endpoint := Endpoint, sbom := SBOM_File, sscg := SSCG_File, token := T
         {error, {encode_error, Reason}} ->
             sscg_generator_cli:abort(
                 "Error: Failed to encode JSON for the request. Data: ~p. Reason: ~p~n",
-                "Error: Failed to encode JSON for the request. Data: ~p. Reason: ~p~n",
                 [Data, Reason]);
         {error, {request_failed, Reason}} ->
             sscg_generator_cli:abort(

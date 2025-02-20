@@ -60,7 +60,7 @@ substantiates it.
 """.
 -type evidence() :: #{'bom-ref'   => bom_ref(),
                       description => binary(),
-                      data        => [data]
+                      data        => [data()]
                     }.
 
 -type assessor() :: #{'bom-ref'      => bom_ref(),
@@ -75,6 +75,7 @@ substantiates it.
 
 -type bom_ref() :: binary().
 -type hash()    :: #{alg => binary(), content => binary()}.
+
 %--- Files ---------------------------------------------------------------------
 -type decoded_json() :: map().
 -type file_path()    :: binary() | string().
